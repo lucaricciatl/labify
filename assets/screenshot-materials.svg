@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 550">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  
+  <g transform="translate(40,30)">
+    <rect x="0" y="0" width="1120" height="48" rx="8" fill="#ffffff" filter="url(#shadow)"/>
+    <circle cx="24" cy="24" r="8" fill="#0d9488"/>
+    <text x="42" y="29" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Labify</text>
+  </g>
+  
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="1120" height="430" rx="10" fill="#ffffff" filter="url(#shadow)"/>
+    <text x="30" y="35" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="#0f172a">Materials</text>
+    
+    <g transform="translate(20, 60)">
+      <!-- Card 1 -->
+      <g transform="translate(0,0)">
+        <rect width="250" height="160" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+        <rect x="0" y="0" width="250" height="80" rx="10" fill="#f0fdfa"/>
+        <text x="20" y="35" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Hydrochloric acid, 37%</text>
+        <text x="20" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">ACS reagent</text>
+        <text x="20" y="130" font-family="monospace" font-size="11" fill="#64748b">Sigma-Aldrich · $0.00 / mL</text>
+        <text x="20" y="150" font-family="monospace" font-size="11" fill="#0d9488">258148</text>
+      </g>
+      <!-- Card 2 -->
+      <g transform="translate(270,0)">
+        <rect width="250" height="160" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+        <rect x="0" y="0" width="250" height="80" rx="10" fill="#f0fdfa"/>
+        <text x="20" y="35" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Ti3AlC2 MAX Phase</text>
+        <text x="20" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">≥99.99%, ≤100 μm</text>
+        <text x="20" y="130" font-family="monospace" font-size="11" fill="#64748b">Sigma-Aldrich · $0.00 / g</text>
+        <text x="20" y="150" font-family="monospace" font-size="11" fill="#0d9488">910767</text>
+      </g>
+      <!-- Card 3 -->
+      <g transform="translate(540,0)">
+        <rect width="250" height="160" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+        <rect x="0" y="0" width="250" height="80" rx="10" fill="#f0fdfa"/>
+        <text x="20" y="35" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Delaminated Ti3C2Tx</text>
+        <text x="20" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">MXene 0.5 g/L</text>
+        <text x="20" y="130" font-family="monospace" font-size="11" fill="#64748b">In-house · $0.00 / mL</text>
+        <text x="20" y="150" font-family="monospace" font-size="11" fill="#0d9488">M-021</text>
+      </g>
+      <!-- Card 4 -->
+      <g transform="translate(810,0)">
+        <rect width="250" height="160" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+        <rect x="0" y="0" width="250" height="80" rx="10" fill="#f0fdfa"/>
+        <text x="20" y="35" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Deionized water</text>
+        <text x="20" y="55" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#0f172a">Type I</text>
+        <text x="20" y="130" font-family="monospace" font-size="11" fill="#64748b">VWR · $0.00 / mL</text>
+        <text x="20" y="150" font-family="monospace" font-size="11" fill="#0d9488">M-017</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  
+  <g transform="translate(40,30)">
+    <rect x="0" y="0" width="1120" height="48" rx="8" fill="#ffffff" filter="url(#shadow)"/>
+    <circle cx="24" cy="24" r="8" fill="#0d9488"/>
+    <text x="42" y="29" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Labify</text>
+    <rect x="940" y="10" width="160" height="28" rx="6" fill="#f1f5f9"/>
+    <text x="950" y="28" font-family="monospace" font-size="12" fill="#64748b">Search...</text>
+  </g>
+  
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="1120" height="580" rx="10" fill="#ffffff" filter="url(#shadow)"/>
+    
+    <text x="30" y="35" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="#0f172a">Experiments</text>
+    <rect x="920" y="12" width="100" height="30" rx="6" fill="#0d9488"/>
+    <text x="930" y="32" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#fff">+ Add</text>
+    
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="1080" height="40" rx="6" fill="#f0fdfa"/>
+      <text x="20" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">ID</text>
+      <text x="180" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Name</text>
+      <text x="420" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Start</text>
+      <text x="540" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">End</text>
+      <text x="660" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Items</text>
+      <text x="760" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Est. Cost</text>
+    
+      <rect x="0" y="48" width="1080" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="20" y="85" font-family="monospace" font-size="12" fill="#0d9488">EXP-20250630-01</text>
+      <text x="180" y="85" font-family="system-ui, sans-serif" font-size="14" fill="#0f172a">Ti3AlC2 MAX Phase Synthesis</text>
+      <text x="420" y="85" font-family="monospace" font-size="12" fill="#475569">2025-06-01</text>
+      <text x="540" y="85" font-family="monospace" font-size="12" fill="#475569">2025-06-02</text>
+      <text x="660" y="85" font-family="monospace" font-size="12" fill="#475569">4 items</text>
+      <text x="760" y="85" font-family="monospace" font-size="13" fill="#0f172a" font-weight="600">$0.00</text>
+    
+      <rect x="0" y="112" width="1080" height="60" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="20" y="149" font-family="monospace" font-size="12" fill="#0d9488">EXP-20250630-02</text>
+      <text x="180" y="149" font-family="system-ui, sans-serif" font-size="14" fill="#0f172a">Ti3C2Tx MXene Etching & Delamination</text>
+      <text x="420" y="149" font-family="monospace" font-size="12" fill="#475569">2025-06-03</text>
+      <text x="540" y="149" font-family="monospace" font-size="12" fill="#475569">2025-06-05</text>
+      <text x="660" y="149" font-family="monospace" font-size="12" fill="#475569">5 items</text>
+      <text x="760" y="149" font-family="monospace" font-size="13" fill="#0f172a" font-weight="600">$0.00</text>
+    
+      <rect x="0" y="176" width="1080" height="60" rx="6" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="20" y="213" font-family="monospace" font-size="12" fill="#0d9488">EXP-20250630-03</text>
+      <text x="180" y="213" font-family="system-ui, sans-serif" font-size="14" fill="#0f172a">MXene-ECRAM Device Fabrication</text>
+      <text x="420" y="213" font-family="monospace" font-size="12" fill="#475569">2025-06-10</text>
+      <text x="540" y="213" font-family="monospace" font-size="12" fill="#475569">2025-06-20</text>
+      <text x="660" y="213" font-family="monospace" font-size="12" fill="#475569">25 items</text>
+      <text x="760" y="213" font-family="monospace" font-size="13" fill="#0f172a" font-weight="600">$1,044,150.00</text>
+    </g>
+  </g>
+  
+  <g transform="translate(40, 690)">
+    <rect x="0" y="0" width="1120" height="40" rx="6" fill="#f0fdfa" stroke="#5eead4" stroke-width="1"/>
+    <text x="30" y="26" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d9488">Estimated Total Cost: $1,044,150.00</text>
+  </g>
+</svg>

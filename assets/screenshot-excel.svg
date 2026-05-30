@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 550">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  
+  <g transform="translate(40,30)">
+    <rect x="0" y="0" width="1120" height="48" rx="8" fill="#ffffff" filter="url(#shadow)"/>
+    <circle cx="24" cy="24" r="8" fill="#0d9488"/>
+    <text x="42" y="29" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Labify</text>
+  </g>
+  
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="1120" height="430" rx="10" fill="#ffffff" filter="url(#shadow)"/>
+    <text x="30" y="35" font-family="system-ui, sans-serif" font-size="20" font-weight="600" fill="#0f172a">Exp-20250630-03-experiment.xlsx</text>
+    
+    <g transform="translate(20, 60)">
+      <rect x="0" y="0" width="1080" height="80" rx="8" fill="#f0fdfa" stroke="#5eead4"/>
+      <text x="20" y="35" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#0f172a">Excel Workbook — 5 Sheets</text>
+      <text x="20" y="58" font-family="monospace" font-size="12" fill="#64748b">Experiment · Materials · Instruments · Cost Summary · Documents</text>
+      
+      <rect x="0" y="100" width="1080" height="40" rx="6" fill="#f0fdfa"/>
+      <text x="20" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Material Code</text>
+      <text x="200" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Material Name</text>
+      <text x="500" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Qty</text>
+      <text x="600" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Unit</text>
+      <text x="680" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Unit Price</text>
+      <text x="800" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Line Cost</text>
+      <text x="930" y="26" font-family="monospace" font-size="12" fill="#0f172a" font-weight="600">Supplier</text>
+      
+      <rect x="0" y="48" width="1080" height="44" rx="6" fill="#ffffff" stroke="#e2e8f0"/>
+      <text x="20" y="74" font-family="monospace" font-size="12" fill="#0d9488">M-021</text>
+      <text x="200" y="74" font-family="system-ui, sans-serif" font-size="13" fill="#0f172a">Delaminated Ti3C2Tx MXene</text>
+      <text x="500" y="74" font-family="monospace" font-size="13" fill="#475569">50</text>
+      <text x="600" y="74" font-family="monospace" font-size="13" fill="#475569">mL</text>
+      <text x="680" y="74" font-family="monospace" font-size="13" fill="#475569">$0.00</text>
+      <text x="800" y="74" font-family="monospace" font-size="13" fill="#475569">$0.00</text>
+      <text x="930" y="74" font-family="monospace" font-size="13" fill="#475569">In-house</text>
+      
+      <rect x="0" y="92" width="1080" height="44" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+      <text x="20" y="118" font-family="monospace" font-size="12" fill="#0d9488">M-010</text>
+      <text x="200" y="118" font-family="system-ui, sans-serif" font-size="13" fill="#0f172a">TAPA 98%</text>
+      <text x="500" y="118" font-family="monospace" font-size="13" fill="#475569">0.5</text>
+      <text x="600" y="118" font-family="monospace" font-size="13" fill="#475569">g</text>
+      <text x="680" y="118" font-family="monospace" font-size="13" fill="#475569">$0.00</text>
+      <text x="800" y="118" font-family="monospace" font-size="13" fill="#475569">$0.00</text>
+      <text x="930" y="118" font-family="monospace" font-size="13" fill="#475569">Sigma-Aldrich</text>
+    </g>
+  </g>
+</svg>
