@@ -110,6 +110,50 @@ Labify ships with pre-loaded example data extracted from real research literatur
 
 ---
 
+## 🐳 Docker Setup
+
+Labify can be run entirely inside Docker. The image is a static Nginx server serving the built Vite app.
+
+### Build & run
+
+```bash
+# Using Docker Compose (recommended)
+docker compose up -d
+
+# Or plain Docker
+docker build -t labify .
+docker run -d -p 8080:80 --name labify --restart unless-stopped labify
+```
+
+Then open http://localhost:8080.
+
+### Update without data loss
+
+Because Labify stores all data in the **browser's IndexedDB** (not on the server), updating the Docker image is completely safe:
+
+```bash
+docker compose pull   # if pulling from a registry
+docker compose up -d  # recreate container — user data stays in the browser
+```
+
+> ⚠️ Make sure **WebDAV sync is enabled** in Settings so your data is backed up to the cloud before any major browser or device change.
+
+---
+
+## 🛡 Safe Updates & Database Migrations
+
+Labify ships with a **non-destructive IndexedDB migration strategy**.
+
+- **Automatic backups** — whenever the database schema version changes, Labify first exports all existing object stores into `localStorage` before touching the schema.
+- **No store deletion on upgrade** — missing object stores are created, but existing ones are never blindly dropped. This prevents data loss when the app updates.
+- **Manual export / import** — the `db.exportAll()` and `db.importAll()` APIs are available for full-database JSON backup/restore.
+
+### Rolling back a bad migration
+
+If an update ever corrupts data, open DevTools → Application → Local Storage and look for the key `labify-migration-backup-v<oldVersion>`. It contains a JSON snapshot of every store taken right before the schema change.
+
+---
+
 ## ☁️ WebDAV Cloud Sync Setup
 
 1. Open **Settings** (gear icon in sidebar footer)
@@ -146,6 +190,7 @@ Labify is designed for reproducible research. To add an experiment from a paper:
 | Sync | WebDAV (custom client with `markDirty` debounce) |
 | Export | `xlsx` library |
 | Icons | Lucide React |
+| Deployment | Docker + Nginx (SPA) |
 
 ---
 
