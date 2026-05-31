@@ -34,6 +34,12 @@ export function downloadExperimentExcel(
     totalCost += (inst?.price ?? 0) * ei.quantityNeeded;
   }
 
+  const materialsList = exp.materials.map((em) => {
+    const mat = allMaterials.find((m) => m.code === em.materialCode);
+    const unit = em.unit ?? mat?.unit ?? "";
+    return `${mat?.name ?? em.materialCode} (${em.quantityNeeded} ${unit})`.trim();
+  }).join("; ") || "-";
+
   const overview = [
     { Field: "ID", Value: exp.id },
     { Field: "Name", Value: exp.name },
@@ -44,6 +50,7 @@ export function downloadExperimentExcel(
     { Field: "Total Estimated Cost", Value: `$${totalCost.toFixed(2)}` },
     { Field: "Document Links Count", Value: exp.docLinks?.length ?? 0 },
     { Field: "Attachments Count", Value: exp.attachments?.length ?? 0 },
+    { Field: "Materials", Value: materialsList },
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(overview), "Experiment");
 
