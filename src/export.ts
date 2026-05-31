@@ -69,7 +69,7 @@ export function downloadExperimentExcel(
     };
   });
   if (matRows.length > 0) {
-    matRows.push({ "#": "", "Material ID": "", "Material Name": "", "Quantity Needed": 0, "Unit": "", "Unit Price": 0, "Line Cost": matCost, "Supplier": "", "Product Link": "", "Consumable": "", "Has Image": "", "Attachments Count": 0, "": "MATERIALS SUBTOTAL" });
+    matRows.push({ "#": 0, "Material ID": "", "Material Name": "MATERIALS SUBTOTAL", "Quantity Needed": 0, "Unit": "", "Unit Price": 0, "Line Cost": matCost, "Supplier": "", "Product Link": "", "Consumable": "", "Has Image": "", "Attachments Count": 0 });
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matRows), "Materials");
 
@@ -90,7 +90,7 @@ export function downloadExperimentExcel(
     };
   });
   if (instRows.length > 0) {
-    instRows.push({ "#": "", "Instrument ID": "", "Instrument Name": "", "Quantity Needed": 0, "Unit Price": 0, "Line Cost": instCost, "Supplier": "INSTRUMENTS SUBTOTAL" });
+    instRows.push({ "#": 0, "Instrument ID": "", "Instrument Name": "", "Quantity Needed": 0, "Unit Price": 0, "Line Cost": instCost, "Supplier": "INSTRUMENTS SUBTOTAL" });
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(instRows), "Instruments");
 
