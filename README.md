@@ -59,7 +59,16 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173 in your browser.
+The dev server now listens on **0.0.0.0** by default (accessible from any device on your network).  
+To bind a specific IP or port:
+
+```bash
+HOST=192.168.1.5 PORT=3000 npm run dev
+# or use LISTEN instead of HOST
+LISTEN=192.168.1.5 npm run preview
+```
+
+Then open http://localhost:5173 (or the IP/port you chose) in your browser.
 
 ---
 
@@ -126,6 +135,40 @@ docker run -d -p 8080:80 --name labify --restart unless-stopped labify
 ```
 
 Then open http://localhost:8080.
+
+### Custom IP / port (Docker Compose)
+
+`docker-compose.yml` supports three environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LISTEN` | `0.0.0.0` | IP that **nginx binds to** inside the container |
+| `HOST`   | `0.0.0.0` | IP that Docker publishes the port on (host side) |
+| `PORT`   | `8080`    | Host port mapped to the container |
+
+Examples:
+
+```bash
+# Default — accessible from any device on the network
+PORT=8080 docker compose up -d
+
+# Bind only to localhost (safer, no LAN exposure)
+HOST=127.0.0.1 docker compose up -d
+
+# Custom host IP + port
+HOST=192.168.1.5 PORT=3000 docker compose up -d
+
+# Make nginx listen on a specific internal interface
+# (useful with network_mode: host or custom Docker networks)
+LISTEN=192.168.1.5 docker compose up -d
+```
+
+> You can also create a `.env` file in the project root so the values persist:
+> ```
+> LISTEN=0.0.0.0
+> HOST=0.0.0.0
+> PORT=8080
+> ```
 
 ### Update without data loss
 
