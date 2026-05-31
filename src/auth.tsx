@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 interface User {
   id: string;
@@ -33,10 +33,11 @@ export function useAuth() {
   return ctx;
 }
 
-function networkError(err: unknown): { error: string } {
+function networkError(err: unknown, url?: string): { error: string } {
   const msg = err instanceof Error ? err.message : String(err);
   if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed to fetch")) {
-    return { error: "Cannot reach the server. Is the API running?" };
+    const endpoint = url || `${API_BASE || window.location.origin}/api`;
+    return { error: `Cannot reach the API at ${endpoint}. Is the backend running?` };
   }
   return { error: msg };
 }
@@ -60,8 +61,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    const url = `${API_BASE}/api/auth/login`;
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -72,13 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState({ user: data.user, token: data.token, loading: false });
       return {};
     } catch (err) {
-      return networkError(err);
+      return networkError(err, url);
     }
   }, []);
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
+    const url = `${API_BASE}/api/auth/register`;
     try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name }),
@@ -91,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { message: data.message, token: data.token, user: data.user };
     } catch (err) {
-      return networkError(err);
+      return networkError(err, url);
     }
   }, []);
 
