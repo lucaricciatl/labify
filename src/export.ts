@@ -34,12 +34,6 @@ export function downloadExperimentExcel(
     totalCost += (inst?.price ?? 0) * ei.quantityNeeded;
   }
 
-  const materialsList = exp.materials.map((em) => {
-    const mat = allMaterials.find((m) => m.code === em.materialCode);
-    const unit = em.unit ?? mat?.unit ?? "";
-    return `${mat?.name ?? em.materialCode} (${em.quantityNeeded} ${unit})`.trim();
-  }).join("; ") || "-";
-
   const overview = [
     { Field: "ID", Value: exp.id },
     { Field: "Name", Value: exp.name },
@@ -50,9 +44,46 @@ export function downloadExperimentExcel(
     { Field: "Total Estimated Cost", Value: `$${totalCost.toFixed(2)}` },
     { Field: "Document Links Count", Value: exp.docLinks?.length ?? 0 },
     { Field: "Attachments Count", Value: exp.attachments?.length ?? 0 },
-    { Field: "Materials", Value: materialsList },
   ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(overview), "Experiment");
+
+  // Build "Experiment" sheet as AOA so we can put overview + materials table on the same sheet
+  const aoa: (string | number)[][] = [];
+  aoa.push(["Experiment Overview"]);
+  aoa.push(["Field", "Value"]);
+  for (const row of overview) {
+    aoa.push([row.Field, row.Value]);
+  }
+
+  // Materials sub-table on the same sheet
+  if (exp.materials.length > 0) {
+    aoa.push([]);
+    aoa.push(["Materials used in this experiment"]);
+    aoa.push([]);
+    aoa.push(["#", "Material ID", "Material Name", "Quantity Needed", "Unit", "Unit Price", "Line Cost", "Supplier", "Product Link"]);
+    let idx = 0;
+    let sheetMatCost = 0;
+    for (const em of exp.materials) {
+      const mat = allMaterials.find((m) => m.code === em.materialCode);
+      const lineCost = (mat?.price ?? 0) * em.quantityNeeded;
+      sheetMatCost += lineCost;
+      idx++;
+      aoa.push([
+        idx,
+        em.materialCode,
+        mat?.name ?? "-",
+        em.quantityNeeded,
+        em.unit ?? mat?.unit ?? "",
+        mat?.price ?? 0,
+        lineCost,
+        mat?.supplierName ?? "-",
+        mat?.link ?? "-",
+      ]);
+    }
+    aoa.push(["", "", "MATERIALS SUBTOTAL", "", "", "", sheetMatCost, "", ""]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  XLSX.utils.book_append_sheet(wb, ws, "Experiment");
 
   // Sheet 2: Materials (detailed)
   let matCost = 0;
