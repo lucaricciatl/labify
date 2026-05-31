@@ -175,7 +175,7 @@ function crudRoutes(
   const placeholders = columns.map(() => "?").join(", ");
   const updates = columns.map((c) => `${c} = ?`).join(", ");
 
-  app.get(`/api/${name}`, authMiddleware, (_req, res) => {
+  app.get(`/api/${name}`, (_req, res) => {
     const rows = db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
     res.json(
       rows.map((r) => {
@@ -194,7 +194,7 @@ function crudRoutes(
     );
   });
 
-  app.get(`/api/${name}/:${pk}`, authMiddleware, (req, res) => {
+  app.get(`/api/${name}/:${pk}`, (req, res) => {
     const row = db.prepare(`SELECT * FROM ${table} WHERE ${pk} = ?`).get(req.params[pk]) as Record<string, unknown> | undefined;
     if (!row) return res.status(404).json({ error: "Not found" });
     const out: Record<string, unknown> = {};
@@ -210,7 +210,7 @@ function crudRoutes(
     res.json(out);
   });
 
-  app.post(`/api/${name}`, authMiddleware, (req, res) => {
+  app.post(`/api/${name}`, (req, res) => {
     try {
       const vals = columns.map((c) => {
         if (jsonCols.includes(c)) return json(req.body[c.replace("_json", "")]);
@@ -224,7 +224,7 @@ function crudRoutes(
     }
   });
 
-  app.patch(`/api/${name}/:${pk}`, authMiddleware, (req, res) => {
+  app.patch(`/api/${name}/:${pk}`, (req, res) => {
     try {
       const vals = columns.map((c) => {
         if (jsonCols.includes(c)) return json(req.body[c.replace("_json", "")]);
@@ -238,7 +238,7 @@ function crudRoutes(
     }
   });
 
-  app.delete(`/api/${name}/:${pk}`, authMiddleware, (req, res) => {
+  app.delete(`/api/${name}/:${pk}`, (req, res) => {
     const result = db.prepare(`DELETE FROM ${table} WHERE ${pk} = ?`).run(req.params[pk]);
     if (result.changes === 0) return res.status(404).json({ error: "Not found" });
     res.json({ deleted: req.params[pk] });
@@ -254,7 +254,7 @@ crudRoutes("orders", "orders", "id", ["id", "material_code", "supplier_id", "qua
 crudRoutes("inventory", "inventory", "id", ["id", "material_code", "supplier_id", "quantity", "unit_price", "batch", "received_date"]);
 
 // ─── Full backup / restore ───────────────────────────────────────
-app.get("/api/backup", authMiddleware, (_req, res) => {
+app.get("/api/backup", (_req, res) => {
   const backup = {
     suppliers: db.prepare("SELECT * FROM suppliers").all(),
     materials: (db.prepare("SELECT * FROM materials").all() as Record<string, unknown>[]).map((r) => ({ ...r, attachments: parseJson(r.attachments_json as string) })),
@@ -273,7 +273,7 @@ app.get("/api/backup", authMiddleware, (_req, res) => {
   res.json(backup);
 });
 
-app.post("/api/restore", authMiddleware, (req, res) => {
+app.post("/api/restore", (req, res) => {
   try {
     const data = req.body;
     const insertSuppliers = db.prepare("INSERT OR REPLACE INTO suppliers (id, name, webpage) VALUES (?, ?, ?)");
