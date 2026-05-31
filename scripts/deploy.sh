@@ -159,7 +159,7 @@ echo ""
 
 # ─── Build & start ───────────────────────────────────────────────
 echo "🔨 Building Docker images (no cache) and starting containers..."
-docker compose up --build -d
+docker compose --env-file "$ENV_FILE" up --build -d
 
 echo ""
 echo "🚀 Labify deployed successfully!"

@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: labify
-    env_file: .env
     environment:
       - LISTEN=${LISTEN:-0.0.0.0}
     ports:
@@ -22,7 +21,6 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: labify-api
-    env_file: .env
     environment:
       - API_PORT=3000
       - DATABASE_PATH=/data/labify.db
