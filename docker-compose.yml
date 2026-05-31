@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: labify
+    env_file: .env
     environment:
       - LISTEN=${LISTEN:-0.0.0.0}
     ports:
@@ -21,11 +22,14 @@ services:
       context: .
       dockerfile: Dockerfile.api
     container_name: labify-api
+    env_file: .env
     environment:
       - API_PORT=3000
       - DATABASE_PATH=/data/labify.db
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - APP_URL=${APP_URL:-http://localhost:8080}
+      - CORS_ORIGIN=${CORS_ORIGIN:-}
+      - EMAIL_SERVICE=${EMAIL_SERVICE:-}
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER:-}

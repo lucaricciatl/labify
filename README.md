@@ -119,9 +119,100 @@ Labify ships with pre-loaded example data extracted from real research literatur
 
 ---
 
-## 🐳 Docker Setup
+## 🐳 Deploy to a Server (recommended)
 
-Labify can be run entirely inside Docker. The image is a static Nginx server serving the built Vite app.
+Labify is designed to run on a central server with remote clients (lab members) connecting via browser.
+
+### One-command deployment
+
+```bash
+./scripts/deploy.sh
+```
+
+This interactive script will:
+1. Ask for your public domain or IP (e.g. `labify.yourlab.com`)
+2. Ask for ports, JWT secret, and optional email (SMTP) settings
+3. Write a `.env` file with all configuration
+4. **Rebuild Docker images from scratch** (`--build`) and start everything
+
+After it finishes, open the printed URL in your browser.
+
+### What the script configures
+
+| Prompt | Default | Purpose |
+|--------|---------|---------|
+| Domain or IP | — | Public address clients use (`APP_URL`, `CORS_ORIGIN`) |
+| Frontend port | `8080` | Host port for nginx |
+| API port | `3000` | Host port for direct API access (also proxied through nginx at `/api/`) |
+| Bind IP | `0.0.0.0` | `0.0.0.0` = accessible from any network interface |
+| JWT secret | auto-generated | Signs authentication tokens |
+| Email service | skip | Gmail, Outlook, SendGrid, or custom SMTP for notifications |
+
+### Update / redeploy
+
+To pull code changes and recreate images:
+
+```bash
+git pull
+./scripts/deploy.sh
+```
+
+Or manually:
+```bash
+docker compose up --build -d
+```
+
+> ⚠️ **Always use `--build`** so Docker picks up source changes. Without it, old cached layers are reused.
+
+### Manual Docker Compose (without the script)
+
+```bash
+# 1. Create .env from the example
+cp .env.example .env
+# 2. Edit .env with your settings
+nano .env
+# 3. Build and start
+docker compose up --build -d
+```
+
+Then open the URL you set in `APP_URL`.
+
+### Behind a reverse proxy (nginx, Traefik, Caddy)
+
+If you already have a reverse proxy handling HTTPS:
+
+1. Set `APP_URL=https://labify.yourlab.com` and `CORS_ORIGIN=https://labify.yourlab.com`
+2. Point your reverse proxy to `http://localhost:8080` (the Labify nginx container)
+3. Optionally leave the API port empty so the API is only reachable through the proxy:
+   ```bash
+   API_PORT=  ./scripts/deploy.sh
+   ```
+
+### Environment variables reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DOMAIN` | ✅ | Public domain or IP |
+| `APP_URL` | ✅ | Full URL with protocol (`https://…` or `http://…`) |
+| `CORS_ORIGIN` | ✅ | Same as `APP_URL` — restricts API access to your frontend |
+| `LISTEN` / `HOST` | — | Bind IP (`0.0.0.0` for public, `127.0.0.1` for localhost-only) |
+| `PORT` | — | Frontend host port |
+| `API_PORT` | — | API host port (set empty to hide API behind nginx only) |
+| `JWT_SECRET` | ✅ | Long random string for signing tokens |
+| `EMAIL_SERVICE` | — | `gmail`, `outlook365`, `sendgrid` … |
+| `SMTP_HOST` | — | Custom SMTP server hostname |
+| `SMTP_PORT` | `587` | SMTP port |
+| `SMTP_USER` | — | SMTP username |
+| `SMTP_PASS` | — | SMTP password / app password |
+| `FROM_EMAIL` | — | Sender address |
+
+### Data persistence
+
+All data lives in a Docker volume (`labify-data`) mounted at `/data` inside the API container. Updating the image is safe — the SQLite database is preserved.
+
+---
+
+## ☁️ WebDAV Cloud Sync Setup
 
 ### Build & run
 
