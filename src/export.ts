@@ -13,12 +13,12 @@ export function downloadExperimentExcel(
     name: string;
     startingDate: string;
     endingDate: string;
-    materials: { materialCode: string; quantityNeeded: number }[];
+    materials: { materialCode: string; quantityNeeded: number; unit?: string }[];
     instruments: { instrumentCode: string; quantityNeeded: number }[];
     docLinks?: { label: string; url: string }[];
     attachments?: { name: string }[];
   },
-  allMaterials: { code: string; name: string; supplierName: string; price: number; unit: string }[],
+  allMaterials: { code: string; name: string; supplierName: string; price: number; unit: string; link?: string; consumable?: boolean; image?: string; attachments?: { name: string }[] }[],
   allInstruments: { code: string; name: string; supplierName: string; price: number }[]
 ) {
   const wb = XLSX.utils.book_new();
@@ -47,44 +47,50 @@ export function downloadExperimentExcel(
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(overview), "Experiment");
 
-  // Sheet 2: Materials
+  // Sheet 2: Materials (detailed)
   let matCost = 0;
-  const matRows = exp.materials.map((em) => {
+  const matRows = exp.materials.map((em, idx) => {
     const mat = allMaterials.find((m) => m.code === em.materialCode);
     const lineCost = (mat?.price ?? 0) * em.quantityNeeded;
     matCost += lineCost;
     return {
-      "Material Code": em.materialCode,
+      "#": idx + 1,
+      "Material ID": em.materialCode,
       "Material Name": mat?.name ?? "-",
       "Quantity Needed": em.quantityNeeded,
-      "Unit": mat?.unit ?? "",
+      "Unit": em.unit ?? mat?.unit ?? "",
       "Unit Price": mat?.price ?? 0,
       "Line Cost": lineCost,
-      Supplier: mat?.supplierName ?? "-",
+      "Supplier": mat?.supplierName ?? "-",
+      "Product Link": mat?.link ?? "-",
+      "Consumable": mat?.consumable ? "Yes" : "No",
+      "Has Image": mat?.image ? "Yes" : "No",
+      "Attachments Count": mat?.attachments?.length ?? 0,
     };
   });
   if (matRows.length > 0) {
-    matRows.push({ "Material Code": "", "Material Name": "", "Quantity Needed": 0, "Unit": "", "Unit Price": 0, "Line Cost": matCost, Supplier: "MATERIALS SUBTOTAL" });
+    matRows.push({ "#": "", "Material ID": "", "Material Name": "", "Quantity Needed": 0, "Unit": "", "Unit Price": 0, "Line Cost": matCost, "Supplier": "", "Product Link": "", "Consumable": "", "Has Image": "", "Attachments Count": 0, "": "MATERIALS SUBTOTAL" });
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matRows), "Materials");
 
   // Sheet 3: Instruments
   let instCost = 0;
-  const instRows = exp.instruments.map((ei) => {
+  const instRows = exp.instruments.map((ei, idx) => {
     const inst = allInstruments.find((i) => i.code === ei.instrumentCode);
     const lineCost = (inst?.price ?? 0) * ei.quantityNeeded;
     instCost += lineCost;
     return {
-      "Instrument Code": ei.instrumentCode,
+      "#": idx + 1,
+      "Instrument ID": ei.instrumentCode,
       "Instrument Name": inst?.name ?? "-",
       "Quantity Needed": ei.quantityNeeded,
       "Unit Price": inst?.price ?? 0,
       "Line Cost": lineCost,
-      Supplier: inst?.supplierName ?? "-",
+      "Supplier": inst?.supplierName ?? "-",
     };
   });
   if (instRows.length > 0) {
-    instRows.push({ "Instrument Code": "", "Instrument Name": "", "Quantity Needed": 0, "Unit Price": 0, "Line Cost": instCost, Supplier: "INSTRUMENTS SUBTOTAL" });
+    instRows.push({ "#": "", "Instrument ID": "", "Instrument Name": "", "Quantity Needed": 0, "Unit Price": 0, "Line Cost": instCost, "Supplier": "INSTRUMENTS SUBTOTAL" });
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(instRows), "Instruments");
 

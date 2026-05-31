@@ -155,7 +155,7 @@ export default function Experiments() {
   const exportSingle = (exp: Experiment) => {
     const matEnriched = state.materials.map((m) => {
       const s = state.suppliers.find((x) => x.id === m.supplierId);
-      return { code: m.code, name: m.name, supplierName: s?.name ?? m.supplierId, price: m.price, unit: m.unit };
+      return { code: m.code, name: m.name, supplierName: s?.name ?? m.supplierId, price: m.price, unit: m.unit, link: m.link, consumable: m.consumable, image: m.image, attachments: m.attachments };
     });
     const instEnriched = state.instruments.map((inst) => {
       const s = state.suppliers.find((x) => x.id === inst.supplierId);
