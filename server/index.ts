@@ -11,6 +11,7 @@ const PORT = Number(process.env.API_PORT) || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 
 // ─── Email transport ───────────────────────────────────────────
+const emailService = process.env.EMAIL_SERVICE;           // e.g. "gmail"
 const smtpHost = process.env.SMTP_HOST;
 const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const smtpUser = process.env.SMTP_USER;
@@ -18,34 +19,79 @@ const smtpPass = process.env.SMTP_PASS;
 const fromEmail = process.env.FROM_EMAIL || "labify@localhost";
 const appUrl = process.env.APP_URL || "http://localhost:5173";
 
-const transporter = smtpHost
-  ? nodemailer.createTransport({
+function createTransporter() {
+  if (emailService) {
+    // Uses built-in nodemailer well-known services (gmail, outlook, etc.)
+    if (!smtpUser || !smtpPass) {
+      console.warn("[EMAIL] EMAIL_SERVICE is set but SMTP_USER/SMTP_PASS are missing.");
+      return null;
+    }
+    return nodemailer.createTransport({
+      service: emailService,
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+  }
+  if (smtpHost) {
+    const hasAuth = !!(smtpUser && smtpPass);
+    if (!hasAuth) {
+      console.warn("[EMAIL] SMTP_HOST is set but SMTP_USER/SMTP_PASS are missing. Most servers require authentication.");
+    }
+    return nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
       secure: smtpPort === 465,
-      auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
-    })
-  : null;
-
-async function sendVerificationEmail(to: string, token: string, name?: string) {
-  if (!transporter) {
-    console.log(`[EMAIL MOCK] Verify: ${appUrl}/verify?token=${token}`);
-    return;
+      auth: hasAuth ? { user: smtpUser, pass: smtpPass } : undefined,
+      tls: { rejectUnauthorized: false },
+    });
   }
-  const link = `${appUrl}/verify?token=${token}`;
-  await transporter.sendMail({
-    from: `"Labify" <${fromEmail}>`,
-    to,
-    subject: "Verify your Labify account",
-    html: `
-      <h2>Welcome to Labify 🧪</h2>
-      <p>Hi ${name || "there"},</p>
-      <p>Please verify your email by clicking the link below:</p>
-      <p><a href="${link}" style="padding:10px 16px;background:#0D9488;color:#fff;text-decoration:none;border-radius:6px;">Verify Email</a></p>
-      <p>Or copy this URL: ${link}</p>
-      <p>If you didn't create this account, you can ignore this email.</p>
-    `,
+  return null;
+}
+
+const transporter = createTransporter();
+let emailReady = false;
+
+if (transporter) {
+  transporter.verify((err) => {
+    if (err) {
+      console.error("[EMAIL] Transporter verification failed:", err.message);
+      emailReady = false;
+    } else {
+      console.log("[EMAIL] SMTP transporter ready — emails will be sent.");
+      emailReady = true;
+    }
   });
+} else {
+  console.log("[EMAIL] No SMTP configured — verification links will be printed to the console.");
+}
+
+type EmailResult = { sent: boolean; mock?: boolean; link?: string; error?: string };
+
+async function sendVerificationEmail(to: string, token: string, name?: string): Promise<EmailResult> {
+  const link = `${appUrl}/verify?token=${token}`;
+  if (!transporter) {
+    console.log(`[EMAIL MOCK] Verification link for ${to}: ${link}`);
+    return { sent: false, mock: true, link };
+  }
+  try {
+    await transporter.sendMail({
+      from: `"Labify" <${fromEmail}>`,
+      to,
+      subject: "Verify your Labify account",
+      html: `
+        <h2>Welcome to Labify 🧪</h2>
+        <p>Hi ${name || "there"},</p>
+        <p>Please verify your email by clicking the link below:</p>
+        <p><a href="${link}" style="padding:10px 16px;background:#0D9488;color:#fff;text-decoration:none;border-radius:6px;">Verify Email</a></p>
+        <p>Or copy this URL: <code>${link}</code></p>
+        <p>If you didn't create this account, you can ignore this email.</p>
+      `,
+    });
+    return { sent: true };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[EMAIL] sendMail failed:", msg);
+    return { sent: false, error: msg };
+  }
 }
 
 // ─── Middleware ──────────────────────────────────────────────────
@@ -73,7 +119,7 @@ function authMiddleware(req: AuthRequest, res: express.Response, next: express.N
 
 // ─── Health ──────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+  res.json({ status: "ok", timestamp: new Date().toISOString(), emailConfigured: !!transporter, emailReady });
 });
 
 // ─── Auth ────────────────────────────────────────────────────────
@@ -90,12 +136,14 @@ app.post("/api/auth/register", async (req, res) => {
   const token = uuidv4();
   db.prepare("INSERT INTO users (id, email, password_hash, name, verified, verification_token) VALUES (?, ?, ?, ?, 0, ?)").run(id, email.toLowerCase().trim(), hash, name || null, token);
 
-  try {
-    await sendVerificationEmail(email, token, name);
-  } catch (err) {
-    console.error("Email send failed:", err);
-  }
-  res.status(201).json({ id, message: "Account created. Please check your email to verify." });
+  const emailResult = await sendVerificationEmail(email, token, name);
+  const message = emailResult.sent
+    ? "Account created. Please check your email to verify."
+    : emailResult.mock
+    ? "Account created. Email is not configured — check the server console for the verification link."
+    : `Account created, but the verification email failed to send: ${emailResult.error}`;
+
+  res.status(201).json({ id, message, emailStatus: emailResult });
 });
 
 app.get("/api/auth/verify", (req, res) => {
@@ -118,12 +166,13 @@ app.post("/api/auth/resend", async (req, res) => {
   if (!user.verification_token) {
     db.prepare("UPDATE users SET verification_token = ? WHERE id = ?").run(token, user.id);
   }
-  try {
-    await sendVerificationEmail(email, token, user.name);
-  } catch (err) {
-    console.error("Email send failed:", err);
-  }
-  res.json({ message: "Verification email resent." });
+  const emailResult = await sendVerificationEmail(email, token, user.name);
+  const message = emailResult.sent
+    ? "Verification email sent."
+    : emailResult.mock
+    ? "Email not configured — check the server console for the verification link."
+    : `Verification email failed: ${emailResult.error}`;
+  res.json({ message, emailStatus: emailResult });
 });
 
 app.post("/api/auth/login", (req, res) => {

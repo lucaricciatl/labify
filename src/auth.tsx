@@ -18,7 +18,7 @@ interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  register: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string }>;
+  register: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string; emailStatus?: { sent: boolean; mock?: boolean; link?: string; error?: string } }>;
   logout: () => void;
   verifyEmail: (token: string) => Promise<{ error?: string; message?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string; message?: string }>;
@@ -31,6 +31,14 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be inside AuthProvider");
   return ctx;
+}
+
+function networkError(err: unknown): { error: string } {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes("fetch") || msg.includes("network") || msg.includes("Failed to fetch")) {
+    return { error: "Cannot reach the server. Is the API running?" };
+  }
+  return { error: msg };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,27 +60,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) return { error: data.error || "Login failed" };
-    localStorage.setItem("labify-token", data.token);
-    setState({ user: data.user, token: data.token, loading: false });
-    return {};
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || "Login failed" };
+      localStorage.setItem("labify-token", data.token);
+      setState({ user: data.user, token: data.token, loading: false });
+      return {};
+    } catch (err) {
+      return networkError(err);
+    }
   }, []);
 
   const register = useCallback(async (email: string, password: string, name?: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    const data = await res.json();
-    if (!res.ok) return { error: data.error || "Registration failed" };
-    return { message: data.message };
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || "Registration failed" };
+      return { message: data.message, emailStatus: data.emailStatus };
+    } catch (err) {
+      return networkError(err);
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -81,21 +97,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const verifyEmail = useCallback(async (token: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/verify?token=${encodeURIComponent(token)}`);
-    const data = await res.json();
-    if (!res.ok) return { error: data.error || "Verification failed" };
-    return { message: data.message };
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/verify?token=${encodeURIComponent(token)}`);
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || "Verification failed" };
+      return { message: data.message };
+    } catch (err) {
+      return networkError(err);
+    }
   }, []);
 
   const resendVerification = useCallback(async (email: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/resend`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    if (!res.ok) return { error: data.error || "Resend failed" };
-    return { message: data.message };
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error || "Resend failed" };
+      return { message: data.message };
+    } catch (err) {
+      return networkError(err);
+    }
   }, []);
 
   const apiFetch = useCallback(

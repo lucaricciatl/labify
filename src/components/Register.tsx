@@ -11,6 +11,8 @@ export default function Register({ onSwitch }: { onSwitch: (view: "login" | "reg
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [resentLoading, setResentLoading] = useState(false);
+  const [resentError, setResentError] = useState("");
+  const [emailStatus, setEmailStatus] = useState<{ mock?: boolean; link?: string; error?: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,7 @@ export default function Register({ onSwitch }: { onSwitch: (view: "login" | "reg
       setError(result.error);
     } else {
       setSent(true);
+      setEmailStatus(result.emailStatus || null);
     }
   };
 
@@ -31,16 +34,33 @@ export default function Register({ onSwitch }: { onSwitch: (view: "login" | "reg
         <div className="auth-card">
           <div className="auth-brand">
             <CheckCircle size={32} color="#0D9488" />
-            <h1>Check your email</h1>
-            <p>We sent a verification link to {email}.</p>
+            <h1>Account created</h1>
+            <p>
+              {emailStatus?.mock ? (
+                <><strong>Email is not configured.</strong> Check the server console for the verification link.</>
+              ) : emailStatus?.error ? (
+                <><strong>Email failed to send:</strong> {emailStatus.error}</>
+              ) : (
+                <>We sent a verification link to <strong>{email}</strong>.</>
+              )}
+            </p>
+            {emailStatus?.link && (
+              <div className="auth-error" style={{ wordBreak: "break-all" }}>
+                <strong>Dev link:</strong>{" "}
+                <a href={emailStatus.link} target="_blank" rel="noreferrer">{emailStatus.link}</a>
+              </div>
+            )}
           </div>
+          {resentError && <div className="auth-error">{resentError}</div>}
           <button
             className="auth-btn secondary"
             disabled={resentLoading}
             onClick={async () => {
+              setResentError("");
               setResentLoading(true);
-              await resendVerification(email);
+              const result = await resendVerification(email);
               setResentLoading(false);
+              if (result.error) setResentError(result.error);
             }}
           >
             {resentLoading ? <Loader2 size={16} className="spin" /> : "Resend email"}
