@@ -1,8 +1,10 @@
 node_modules
 dist
+dist-server
 .git
 .gitignore
 Dockerfile
+Dockerfile.api
 docker-compose.yml
 README.md
 assets
@@ -11,3 +13,4 @@ assets
 .vscode
 .idea
 *.log
+data

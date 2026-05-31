@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
   FlaskConical,
   Package,
   Truck,
   Beaker,
-  Users,
   Sun,
   Moon,
   Settings,
@@ -14,9 +14,12 @@ import {
   Wrench,
   ClipboardList,
   ShoppingCart,
+  LogOut,
+  User,
 } from "lucide-react";
 import { StoreProvider, useStore } from "./store";
 import { ThemeProvider, useTheme } from "./theme";
+import { AuthProvider, useAuth } from "./auth";
 import Suppliers from "./components/Suppliers";
 import Materials from "./components/Materials";
 import Instruments from "./components/Instruments";
@@ -24,6 +27,9 @@ import Experiments from "./components/Experiments";
 import Orders from "./components/Orders";
 import Inventory from "./components/Inventory";
 import SettingsModal from "./components/Settings";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import VerifyEmail from "./components/VerifyEmail";
 
 type Tab = "experiments" | "materials" | "orders" | "instruments" | "suppliers" | "inventory";
 
@@ -32,6 +38,7 @@ function SidebarNav() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { state, syncStatus } = useStore();
+  const { user, logout } = useAuth();
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "experiments", label: "Experiments", icon: <FlaskConical size={18} /> },
@@ -91,13 +98,25 @@ function SidebarNav() {
           </button>
         </div>
 
+        {user && (
+          <div className="sidebar-user">
+            <div className="user-row">
+              <User size={14} />
+              <span>{user.name || user.email}</span>
+            </div>
+            <button className="sidebar-tool-btn" onClick={logout}>
+              <LogOut size={14} /> Log out
+            </button>
+          </div>
+        )}
+
         <button className="theme-toggle" onClick={toggle}>
           {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
           <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
         </button>
 
         <div className="sidebar-footer">
-          <div className="stat-row"><Users size={15} /><span>{state.suppliers.length} Suppliers</span></div>
+          <div className="stat-row"><Truck size={15} /><span>{state.suppliers.length} Suppliers</span></div>
           <div className="stat-row"><Package size={15} /><span>{state.materials.length} Materials</span></div>
           <div className="stat-row"><ShoppingCart size={15} /><span>{state.orders.length} Orders</span></div>
           <div className="stat-row"><ClipboardList size={15} /><span>{state.inventory.length} Inventory</span></div>
@@ -118,12 +137,50 @@ function SidebarNav() {
   );
 }
 
+function AuthRouter() {
+  const { user, loading } = useAuth();
+  const [authView, setAuthView] = useState<"login" | "register">("login");
+
+  if (loading) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <Beaker size={32} className="spin" />
+          <p>Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/verify" element={<VerifyEmail />} />
+      <Route
+        path="*"
+        element={
+          user ? (
+            <SidebarNav />
+          ) : authView === "login" ? (
+            <Login onSwitch={setAuthView} />
+          ) : (
+            <Register onSwitch={setAuthView} />
+          )
+        }
+      />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
-    <ThemeProvider>
-      <StoreProvider>
-        <SidebarNav />
-      </StoreProvider>
-    </ThemeProvider>
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <StoreProvider>
+            <AuthRouter />
+          </StoreProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }

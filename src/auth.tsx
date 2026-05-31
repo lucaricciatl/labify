@@ -1,0 +1,118 @@
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+}
+
+interface AuthCtx {
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string }>;
+  register: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string }>;
+  logout: () => void;
+  verifyEmail: (token: string) => Promise<{ error?: string; message?: string }>;
+  resendVerification: (email: string) => Promise<{ error?: string; message?: string }>;
+  apiFetch: (path: string, init?: RequestInit) => Promise<Response>;
+}
+
+const AuthContext = createContext<AuthCtx | null>(null);
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be inside AuthProvider");
+  return ctx;
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>({ user: null, token: null, loading: true });
+
+  useEffect(() => {
+    const token = localStorage.getItem("labify-token");
+    if (!token) {
+      setState((s) => ({ ...s, loading: false }));
+      return;
+    }
+    fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => setState({ user: data.user, token, loading: false }))
+      .catch(() => {
+        localStorage.removeItem("labify-token");
+        setState({ user: null, token: null, loading: false });
+      });
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Login failed" };
+    localStorage.setItem("labify-token", data.token);
+    setState({ user: data.user, token: data.token, loading: false });
+    return {};
+  }, []);
+
+  const register = useCallback(async (email: string, password: string, name?: string) => {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Registration failed" };
+    return { message: data.message };
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("labify-token");
+    setState({ user: null, token: null, loading: false });
+  }, []);
+
+  const verifyEmail = useCallback(async (token: string) => {
+    const res = await fetch(`${API_BASE}/api/auth/verify?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Verification failed" };
+    return { message: data.message };
+  }, []);
+
+  const resendVerification = useCallback(async (email: string) => {
+    const res = await fetch(`${API_BASE}/api/auth/resend`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Resend failed" };
+    return { message: data.message };
+  }, []);
+
+  const apiFetch = useCallback(
+    async (path: string, init?: RequestInit) => {
+      const headers: Record<string, string> = { ...(init?.headers as Record<string, string>) };
+      if (state.token) headers["Authorization"] = `Bearer ${state.token}`;
+      if (!headers["Content-Type"] && init?.body && typeof init.body === "string") headers["Content-Type"] = "application/json";
+      return fetch(`${API_BASE}${path}`, { ...init, headers });
+    },
+    [state.token]
+  );
+
+  return (
+    <AuthContext.Provider
+      value={{ user: state.user, loading: state.loading, login, register, logout, verifyEmail, resendVerification, apiFetch }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}

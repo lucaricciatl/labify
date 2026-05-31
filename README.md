@@ -247,6 +247,117 @@ Labify is designed for reproducible research. To add an experiment from a paper:
 
 ---
 
+## 🔌 REST API
+
+Labify now ships with a **REST API** so external systems (scripts, ELN integrations, lab robots) can push and pull data.
+
+### Quick start (local)
+
+```bash
+# Terminal 1 — start the API server
+npm run server:dev
+
+# Terminal 2 — start the React dev server
+npm run dev
+```
+
+The API listens on `http://localhost:3000` by default.
+
+### Docker Compose
+
+The `api` service is included automatically:
+
+```bash
+docker compose up -d   # frontend on :8080, API on :3000
+```
+
+### Authentication
+
+All data endpoints require a **Bearer token**. Obtain one by registering and logging in.
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `POST /api/auth/register` | — | — | Create account (sends verification email) |
+| `GET /api/auth/verify?token=…` | — | — | Verify email address |
+| `POST /api/auth/resend` | — | — | Resend verification email |
+| `POST /api/auth/login` | — | — | Obtain JWT token |
+| `GET /api/auth/me` | Bearer | ✅ | Current user info |
+
+### Data endpoints
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/suppliers` | GET, POST | List / create suppliers |
+| `/api/suppliers/:id` | GET, PATCH, DELETE | Supplier by ID |
+| `/api/materials` | GET, POST | List / create materials |
+| `/api/materials/:code` | GET, PATCH, DELETE | Material by code |
+| `/api/instruments` | GET, POST | List / create instruments |
+| `/api/instruments/:code` | GET, PATCH, DELETE | Instrument by code |
+| `/api/experiments` | GET, POST | List / create experiments |
+| `/api/experiments/:id` | GET, PATCH, DELETE | Experiment by ID |
+| `/api/orders` | GET, POST | List / create orders |
+| `/api/orders/:id` | GET, PATCH, DELETE | Order by ID |
+| `/api/inventory` | GET, POST | List / create inventory items |
+| `/api/inventory/:id` | GET, PATCH, DELETE | Inventory item by ID |
+| `/api/backup` | GET | Full database JSON dump |
+| `/api/restore` | POST | Bulk import from JSON |
+
+### Example: add a material with curl
+
+```bash
+# 1. Login and grab token
+TOKEN=$(curl -s -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@lab.com","password":"secret"}' | jq -r '.token')
+
+# 2. Create a supplier
+curl -X POST http://localhost:3000/api/suppliers \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"sigma","name":"Sigma-Aldrich","webpage":"https://www.sigmaaldrich.com"}'
+
+# 3. Create a material
+curl -X POST http://localhost:3000/api/materials \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"HCl-37","name":"Hydrochloric acid 37%","supplier_id":"sigma","link":"https://www.sigmaaldrich.com/HCl","price":15.5,"consumable":true,"unit":"mL"}'
+
+# 4. List all materials
+curl http://localhost:3000/api/materials \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Email verification
+
+During registration the API sends a verification email. Configure SMTP via environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `SMTP_HOST` | SMTP server hostname |
+| `SMTP_PORT` | Port (default 587) |
+| `SMTP_USER` | SMTP username |
+| `SMTP_PASS` | SMTP password / app password |
+| `FROM_EMAIL` | Sender address |
+| `APP_URL` | Frontend URL for verification links |
+
+If SMTP is **not configured**, the verification link is printed to the server console so you can still test locally.
+
+### Environment variables
+
+Copy `.env.example` to `.env` and adjust:
+
+```bash
+cp .env.example .env
+```
+
+> ⚠️ **Production checklist**
+> - Change `JWT_SECRET` to a long random string
+> - Configure SMTP for real email delivery
+> - Use HTTPS for `APP_URL`
+> - Run behind a reverse proxy with TLS
+
+---
+
 ## 📄 License
 
 MIT © 2025
