@@ -18,7 +18,7 @@ interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error?: string }>;
-  register: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string; emailStatus?: { sent: boolean; mock?: boolean; link?: string; error?: string } }>;
+  register: (email: string, password: string, name?: string) => Promise<{ error?: string; message?: string; token?: string; user?: User }>;
   logout: () => void;
   verifyEmail: (token: string) => Promise<{ error?: string; message?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string; message?: string }>;
@@ -85,7 +85,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       const data = await res.json();
       if (!res.ok) return { error: data.error || "Registration failed" };
-      return { message: data.message, emailStatus: data.emailStatus };
+      if (data.token) {
+        localStorage.setItem("labify-token", data.token);
+        setState({ user: data.user, token: data.token, loading: false });
+      }
+      return { message: data.message, token: data.token, user: data.user };
     } catch (err) {
       return networkError(err);
     }

@@ -133,54 +133,25 @@ app.post("/api/auth/register", async (req, res) => {
 
   const hash = bcrypt.hashSync(password, 10);
   const id = uuidv4();
-  const token = uuidv4();
-  db.prepare("INSERT INTO users (id, email, password_hash, name, verified, verification_token) VALUES (?, ?, ?, ?, 0, ?)").run(id, email.toLowerCase().trim(), hash, name || null, token);
+  db.prepare("INSERT INTO users (id, email, password_hash, name, verified, verification_token) VALUES (?, ?, ?, ?, 1, NULL)").run(id, email.toLowerCase().trim(), hash, name || null);
 
-  const emailResult = await sendVerificationEmail(email, token, name);
-  const message = emailResult.sent
-    ? "Account created. Please check your email to verify."
-    : emailResult.mock
-    ? "Account created. Email is not configured — check the server console for the verification link."
-    : `Account created, but the verification email failed to send: ${emailResult.error}`;
-
-  res.status(201).json({ id, message, emailStatus: emailResult });
+  const token = jwt.sign({ id, email, name: name || null }, JWT_SECRET, { expiresIn: "7d" });
+  res.status(201).json({ id, token, user: { id, email, name: name || null }, message: "Account created successfully." });
 });
 
 app.get("/api/auth/verify", (req, res) => {
-  const token = req.query.token as string;
-  if (!token) return res.status(400).json({ error: "Missing token" });
-  const user = db.prepare("SELECT id, email, name, verified FROM users WHERE verification_token = ?").get(token) as { id: string; email: string; name: string; verified: number } | undefined;
-  if (!user) return res.status(400).json({ error: "Invalid or expired token" });
-  if (user.verified) return res.json({ message: "Account already verified" });
-  db.prepare("UPDATE users SET verified = 1, verification_token = NULL WHERE id = ?").run(user.id);
-  res.json({ message: "Email verified successfully. You can now log in." });
+  res.json({ message: "Email verification is disabled. You can log in immediately." });
 });
 
-app.post("/api/auth/resend", async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
-  const user = db.prepare("SELECT id, name, verified, verification_token FROM users WHERE email = ?").get(email.toLowerCase().trim()) as { id: string; name: string; verified: number; verification_token: string } | undefined;
-  if (!user) return res.status(404).json({ error: "User not found" });
-  if (user.verified) return res.json({ message: "Account already verified" });
-  const token = user.verification_token || uuidv4();
-  if (!user.verification_token) {
-    db.prepare("UPDATE users SET verification_token = ? WHERE id = ?").run(token, user.id);
-  }
-  const emailResult = await sendVerificationEmail(email, token, user.name);
-  const message = emailResult.sent
-    ? "Verification email sent."
-    : emailResult.mock
-    ? "Email not configured — check the server console for the verification link."
-    : `Verification email failed: ${emailResult.error}`;
-  res.json({ message, emailStatus: emailResult });
+app.post("/api/auth/resend", (_req, res) => {
+  res.json({ message: "Email verification is disabled. You can log in immediately." });
 });
 
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: "Email and password required" });
-  const user = db.prepare("SELECT id, email, name, password_hash, verified FROM users WHERE email = ?").get(email.toLowerCase().trim()) as { id: string; email: string; name: string; password_hash: string; verified: number } | undefined;
+  const user = db.prepare("SELECT id, email, name, password_hash FROM users WHERE email = ?").get(email.toLowerCase().trim()) as { id: string; email: string; name: string; password_hash: string } | undefined;
   if (!user) return res.status(401).json({ error: "Invalid credentials" });
-  if (!user.verified) return res.status(403).json({ error: "Email not verified. Please check your inbox." });
   if (!bcrypt.compareSync(password, user.password_hash)) return res.status(401).json({ error: "Invalid credentials" });
 
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: "7d" });

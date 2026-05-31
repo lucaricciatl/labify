@@ -1,31 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { useAuth } from "../auth";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 export default function VerifyEmail() {
-  const [params] = useSearchParams();
-  const token = params.get("token");
-  const { verifyEmail } = useAuth();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"loading" | "disabled">("loading");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Missing verification token.");
-      return;
-    }
-    verifyEmail(token).then((result) => {
-      if (result.error) {
-        setStatus("error");
-        setMessage(result.error);
-      } else {
-        setStatus("success");
-        setMessage(result.message || "Verified!");
-      }
-    });
-  }, [token, verifyEmail]);
+    // Small delay so the screen doesn't flash
+    const t = setTimeout(() => setStatus("disabled"), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="auth-screen">
@@ -33,22 +16,14 @@ export default function VerifyEmail() {
         {status === "loading" && (
           <div className="auth-brand">
             <Loader2 size={32} className="spin" />
-            <h1>Verifying your email…</h1>
+            <h1>Just a moment…</h1>
           </div>
         )}
-        {status === "success" && (
+        {status === "disabled" && (
           <div className="auth-brand">
             <CheckCircle size={32} color="#0D9488" />
-            <h1>{message}</h1>
-            <p>You can now log in to Labify.</p>
-            <a href="/" className="auth-btn">Go to login</a>
-          </div>
-        )}
-        {status === "error" && (
-          <div className="auth-brand">
-            <XCircle size={32} color="#EF4444" />
-            <h1>Verification failed</h1>
-            <p>{message}</p>
+            <h1>Email verification is disabled</h1>
+            <p>You can log in immediately after creating an account.</p>
             <a href="/" className="auth-btn">Go to login</a>
           </div>
         )}
