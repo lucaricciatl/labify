@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy } from "lucide-react";
 import { useStore, useExperimentActions, generateExperimentId, useOrderActions } from "../store";
 import type { Experiment, ExperimentMaterial, ExperimentInstrument, DocumentLink } from "../types";
 import Modal from "./Modal";
@@ -50,6 +50,18 @@ export default function Experiments() {
   const openEdit = (e: Experiment) => {
     setEditing({ ...e, docLinks: e.docLinks ? [...e.docLinks] : [], attachments: e.attachments ? [...e.attachments] : [] });
     setModal(true);
+  };
+
+  const duplicate = async (e: Experiment) => {
+    const newId = generateExperimentId(state.experiments);
+    const clone: Experiment = {
+      ...e,
+      id: newId,
+      name: `${e.name} (Copy)`,
+      docLinks: e.docLinks ? e.docLinks.map((dl) => ({ ...dl, id: crypto.randomUUID() })) : [],
+      attachments: e.attachments ? e.attachments.map((att) => ({ ...att, id: crypto.randomUUID() })) : [],
+    };
+    await actions.add(clone);
   };
 
   const save = async () => {
@@ -234,6 +246,7 @@ export default function Experiments() {
                     <td><strong>${cost.toFixed(2)}</strong></td>
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(exp)}><Pencil size={14} /></button>
+                      <button className="icon-btn" title="Duplicate" onClick={() => duplicate(exp)}><Copy size={14} /></button>
                       <button className="icon-btn" title="Export" onClick={() => exportSingle(exp)}><FileSpreadsheet size={14} /></button>
                       <button className="icon-btn danger" title="Delete" onClick={() => del(exp.id)}><Trash2 size={14} /></button>
                     </td>
