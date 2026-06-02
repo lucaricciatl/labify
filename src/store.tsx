@@ -57,21 +57,21 @@ const defaultState: AppState = {
     { code: "M-022", name: "Ti3AlC2 MAX phase powder, ≤38 μm", supplierId: "S10", link: "", price: 0, consumable: true, unit: "g" },
   ],
   instruments: [
-    { code: "I-001", name: "Inverted Microscope", supplierId: "S2", link: "https://thermofisher.com/microscope", price: 1200.0, quantity: 1 },
-    { code: "I-002", name: "Benchtop Centrifuge", supplierId: "S1", link: "https://sigmaaldrich.com/centrifuge", price: 450.0, quantity: 1 },
-    { code: "I-003", name: "Tube Furnace (1400°C, Ar atmosphere)", supplierId: "S3", link: "https://vwr.com/tube-furnace", price: 8500.0, quantity: 1 },
-    { code: "I-004", name: "Probe Sonicator (750W, ice bath compatible)", supplierId: "S3", link: "https://vwr.com/probe-sonicator", price: 3200.0, quantity: 1 },
-    { code: "I-005", name: "Vacuum Oven", supplierId: "S3", link: "https://vwr.com/vacuum-oven", price: 2800.0, quantity: 1 },
-    { code: "I-006", name: "Field Emission SEM (Hitachi S4800)", supplierId: "S7", link: "https://www.hitachi-hightech.com/products/sem/s4800", price: 450000.0, quantity: 1 },
-    { code: "I-007", name: "XRD Diffractometer (PANalytical X'Pert PRO)", supplierId: "S9", link: "https://www.malvernpanalytical.com/xpert-pro", price: 120000.0, quantity: 1 },
-    { code: "I-008", name: "Atomic Force Microscope (AFM)", supplierId: "S2", link: "https://thermofisher.com/afm", price: 95000.0, quantity: 1 },
-    { code: "I-009", name: "Semiconductor Parameter Analyzer (Keithley 4200A-SCS)", supplierId: "S6", link: "https://www.tek.com/keithley/4200a-scs", price: 65000.0, quantity: 1 },
-    { code: "I-010", name: "Source-Measure Unit (Keithley 2600)", supplierId: "S6", link: "https://www.tek.com/keithley/2600", price: 18000.0, quantity: 1 },
-    { code: "I-011", name: "Waveform Generator (Keysight 33522B, 30 MHz)", supplierId: "S5", link: "https://www.keysight.com/33522b", price: 5500.0, quantity: 2 },
-    { code: "I-012", name: "Digital Oscilloscope (Keysight DSOS054A, 500 MHz)", supplierId: "S5", link: "https://www.keysight.com/dsos054a", price: 28000.0, quantity: 1 },
-    { code: "I-013", name: "Dip-Coating / LbL Robot (StratoSequence VI)", supplierId: "S8", link: "https://nanostrata.com/StratoSequence", price: 45000.0, quantity: 1 },
-    { code: "I-014", name: "O2 Plasma Cleaner (Optrel GBR, Multi-stop)", supplierId: "S3", link: "https://vwr.com/plasma-cleaner", price: 12000.0, quantity: 1 },
-    { code: "I-015", name: "Vacuum Probe Station (LTMP-4, MMR Technologies)", supplierId: "S3", link: "https://vwr.com/probe-station", price: 85000.0, quantity: 1 },
+    { code: "I-001", name: "Inverted Microscope", supplierId: "S2", link: "https://thermofisher.com/microscope", price: 1200.0, quantity: 1, image: "/assets/tools/01_Inverted_Microscope.png" },
+    { code: "I-002", name: "Benchtop Centrifuge", supplierId: "S1", link: "https://sigmaaldrich.com/centrifuge", price: 450.0, quantity: 1, image: "/assets/tools/02_Benchtop_Centrifuge.png" },
+    { code: "I-003", name: "Tube Furnace (1400°C, Ar atmosphere)", supplierId: "S3", link: "https://vwr.com/tube-furnace", price: 8500.0, quantity: 1, image: "/assets/tools/03_Tube_Furnace__1400_C__Ar_atmosphere_.png" },
+    { code: "I-004", name: "Probe Sonicator (750W, ice bath compatible)", supplierId: "S3", link: "https://vwr.com/probe-sonicator", price: 3200.0, quantity: 1, image: "/assets/tools/04_Probe_Sonicator__750W__ice_bath_compatib.png" },
+    { code: "I-005", name: "Vacuum Oven", supplierId: "S3", link: "https://vwr.com/vacuum-oven", price: 2800.0, quantity: 1, image: "/assets/tools/05_Vacuum_Oven.png" },
+    { code: "I-006", name: "Field Emission SEM (Hitachi S4800)", supplierId: "S7", link: "https://www.hitachi-hightech.com/products/sem/s4800", price: 450000.0, quantity: 1, image: "/assets/tools/06_Field_Emission_SEM__Hitachi_S4800_.png" },
+    { code: "I-007", name: "XRD Diffractometer (PANalytical X'Pert PRO)", supplierId: "S9", link: "https://www.malvernpanalytical.com/xpert-pro", price: 120000.0, quantity: 1, image: "/assets/tools/07_XRD_Diffractometer__PANalytical_X_Pert_P.png" },
+    { code: "I-008", name: "Atomic Force Microscope (AFM)", supplierId: "S2", link: "https://thermofisher.com/afm", price: 95000.0, quantity: 1, image: "/assets/tools/08_Atomic_Force_Microscope__AFM_.png" },
+    { code: "I-009", name: "Semiconductor Parameter Analyzer (Keithley 4200A-SCS)", supplierId: "S6", link: "https://www.tek.com/keithley/4200a-scs", price: 65000.0, quantity: 1, image: "/assets/tools/09_Semiconductor_Parameter_Analyzer__Keithl.png" },
+    { code: "I-010", name: "Source-Measure Unit (Keithley 2600)", supplierId: "S6", link: "https://www.tek.com/keithley/2600", price: 18000.0, quantity: 1, image: "/assets/tools/10_Source-Measure_Unit__Keithley_2600_.png" },
+    { code: "I-011", name: "Waveform Generator (Keysight 33522B, 30 MHz)", supplierId: "S5", link: "https://www.keysight.com/33522b", price: 5500.0, quantity: 2, image: "/assets/tools/11_Waveform_Generator__Keysight_33522B__30_.png" },
+    { code: "I-012", name: "Digital Oscilloscope (Keysight DSOS054A, 500 MHz)", supplierId: "S5", link: "https://www.keysight.com/dsos054a", price: 28000.0, quantity: 1, image: "/assets/tools/12_Digital_Oscilloscope__Keysight_DSOS054A_.png" },
+    { code: "I-013", name: "Dip-Coating / LbL Robot (StratoSequence VI)", supplierId: "S8", link: "https://nanostrata.com/StratoSequence", price: 45000.0, quantity: 1, image: "/assets/tools/13_Dip-Coating___LbL_Robot__StratoSequence_.png" },
+    { code: "I-014", name: "O2 Plasma Cleaner (Optrel GBR, Multi-stop)", supplierId: "S3", link: "https://vwr.com/plasma-cleaner", price: 12000.0, quantity: 1, image: "/assets/tools/14_O2_Plasma_Cleaner__Optrel_GBR__Multi-sto.png" },
+    { code: "I-015", name: "Vacuum Probe Station (LTMP-4, MMR Technologies)", supplierId: "S3", link: "https://vwr.com/probe-station", price: 85000.0, quantity: 1, image: "/assets/tools/15_Vacuum_Probe_Station__LTMP-4__MMR_Techno.png" },
   ],
   experiments: [
     {
@@ -304,6 +304,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         db.getAllOrders(),
         db.getAllInventory(),
       ]);
+
+      // Migration: re-seed instruments if they are missing images
+      const instrumentsNeedImages = instruments.length > 0 && instruments.some((i) => !i.image);
+      if (instrumentsNeedImages) {
+        await db.clearAll();
+        await Promise.all(defaultState.suppliers.map((s) => db.putSupplier(s)));
+        await Promise.all(defaultState.materials.map((m) => db.putMaterial(m)));
+        await Promise.all(defaultState.instruments.map((i) => db.putInstrument(i)));
+        await Promise.all(defaultState.experiments.map((e) => db.putExperiment(e)));
+        await Promise.all(defaultState.orders.map((o) => db.putOrder(o)));
+        await Promise.all(defaultState.inventory.map((iv) => db.putInventoryItem(iv)));
+        dispatch({ type: "HYDRATE", payload: { ...defaultState, loaded: true } });
+        return;
+      }
+
       if (suppliers.length || materials.length || instruments.length || experiments.length || orders.length || inventory.length) {
         dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, orders, inventory, loaded: true } });
       } else {

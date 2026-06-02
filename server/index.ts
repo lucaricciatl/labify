@@ -118,6 +118,12 @@ function authMiddleware(req: AuthRequest, res: express.Response, next: express.N
   }
 }
 
+// ─── First-run check ─────────────────────────────────────────────
+app.get("/api/auth/first-run", (_req, res) => {
+  const count = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
+  res.json({ firstRun: count.count === 0 });
+});
+
 // ─── Health ──────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString(), emailConfigured: !!transporter, emailReady });

@@ -10,6 +10,40 @@ function empty(): Experiment {
   return { id: "", name: "", materials: [], instruments: [], startingDate: "", endingDate: "", docLinks: [], attachments: [] };
 }
 
+function incrementLastNumber(name: string): string {
+  const matches = [...name.matchAll(/\d+/g)];
+  if (matches.length === 0) return `${name} 2`;
+  const lastMatch = matches[matches.length - 1];
+  const numStr = lastMatch[0];
+  const num = parseInt(numStr, 10);
+  const nextNumStr = String(num + 1).padStart(numStr.length, "0");
+  const start = lastMatch.index!;
+  const end = start + numStr.length;
+  return name.slice(0, start) + nextNumStr + name.slice(end);
+}
+
+function incrementLastNumberInId(id: string, existingIds: string[]): string {
+  const matches = [...id.matchAll(/\d+/g)];
+  if (matches.length === 0) return id;
+
+  const lastMatch = matches[matches.length - 1];
+  const numStr = lastMatch[0];
+  const start = lastMatch.index!;
+  const end = start + numStr.length;
+  const prefix = id.slice(0, start);
+  const suffix = id.slice(end);
+
+  let num = parseInt(numStr, 10);
+  let nextId: string;
+  do {
+    num++;
+    const nextNumStr = String(num).padStart(numStr.length, "0");
+    nextId = prefix + nextNumStr + suffix;
+  } while (existingIds.includes(nextId));
+
+  return nextId;
+}
+
 function calculateCost(exp: Experiment, materials: { code: string; price: number }[], instruments: { code: string; price: number }[]): number {
   let cost = 0;
   for (const em of exp.materials) {
@@ -53,11 +87,13 @@ export default function Experiments() {
   };
 
   const duplicate = async (e: Experiment) => {
-    const newId = generateExperimentId(state.experiments);
+    const existingIds = state.experiments.map((ex) => ex.id);
+    const newId = incrementLastNumberInId(e.id, existingIds);
+    const newName = incrementLastNumber(e.name);
     const clone: Experiment = {
       ...e,
       id: newId,
-      name: `${e.name} (Copy)`,
+      name: newName,
       docLinks: e.docLinks ? e.docLinks.map((dl) => ({ ...dl, id: crypto.randomUUID() })) : [],
       attachments: e.attachments ? e.attachments.map((att) => ({ ...att, id: crypto.randomUUID() })) : [],
     };
@@ -223,7 +259,7 @@ export default function Experiments() {
               <th>End Date</th>
               <th>Items</th>
               <th>Est. Cost</th>
-              <th style={{ width: 80 }}></th>
+              <th style={{ width: 130 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -246,7 +282,7 @@ export default function Experiments() {
                     <td><strong>${cost.toFixed(2)}</strong></td>
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(exp)}><Pencil size={14} /></button>
-                      <button className="icon-btn" title="Duplicate" onClick={() => duplicate(exp)}><Copy size={14} /></button>
+                      <button className="icon-btn" title="Duplicate experiment" onClick={() => duplicate(exp)}><Copy size={14} /></button>
                       <button className="icon-btn" title="Export" onClick={() => exportSingle(exp)}><FileSpreadsheet size={14} /></button>
                       <button className="icon-btn danger" title="Delete" onClick={() => del(exp.id)}><Trash2 size={14} /></button>
                     </td>

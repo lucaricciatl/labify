@@ -190,5 +190,5 @@ fi
 
 echo ""
 echo "To update and redeploy later, run:"
-echo "   docker compose up --build -d"
+echo "   ./scripts/update.sh"
 echo ""

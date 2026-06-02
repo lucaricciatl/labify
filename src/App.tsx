@@ -13,9 +13,12 @@ import {
   Wrench,
   ClipboardList,
   ShoppingCart,
+  LogOut,
+  User,
 } from "lucide-react";
 import { StoreProvider, useStore } from "./store";
 import { ThemeProvider, useTheme } from "./theme";
+import { useAuth } from "./auth";
 import Suppliers from "./components/Suppliers";
 import Materials from "./components/Materials";
 import Instruments from "./components/Instruments";
@@ -31,6 +34,7 @@ function SidebarNav() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { state, syncStatus } = useStore();
+  const { user, logout } = useAuth();
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "experiments", label: "Experiments", icon: <FlaskConical size={18} /> },
@@ -93,6 +97,18 @@ function SidebarNav() {
         <button className="theme-toggle" onClick={toggle}>
           {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
           <span>{theme === "light" ? "Dark mode" : "Light mode"}</span>
+        </button>
+
+        {user && (
+          <div style={{ padding: "0.5rem 1rem", borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.8rem", opacity: 0.8 }}>
+            <User size={14} />
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis" }}>{user.name || user.email}</span>
+          </div>
+        )}
+
+        <button className="theme-toggle" onClick={logout} style={{ color: "var(--danger)" }}>
+          <LogOut size={16} />
+          <span>Log out</span>
         </button>
 
         <div className="sidebar-footer">
