@@ -191,7 +191,6 @@ const defaultState: AppState = {
   inventory: [
     { id: "IV1", materialCode: "M-003", supplierId: "S3", quantity: 2, unitPrice: 350.0, batch: "B2025-C", receivedDate: "2025-05-01" },
   ],
-  procedures: [],
   loaded: false,
 };
 
@@ -209,9 +208,6 @@ type Action =
   | { type: "ADD_EXPERIMENT"; payload: Experiment }
   | { type: "UPDATE_EXPERIMENT"; payload: Experiment }
   | { type: "DELETE_EXPERIMENT"; payload: string }
-  | { type: "ADD_PROCEDURE"; payload: Procedure }
-  | { type: "UPDATE_PROCEDURE"; payload: Procedure }
-  | { type: "DELETE_PROCEDURE"; payload: string }
   | { type: "ADD_ORDER"; payload: Order }
   | { type: "UPDATE_ORDER"; payload: Order }
   | { type: "DELETE_ORDER"; payload: string }
@@ -247,12 +243,6 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, experiments: state.experiments.map((e) => e.id === action.payload.id ? action.payload : e) };
     case "DELETE_EXPERIMENT":
       return { ...state, experiments: state.experiments.filter((e) => e.id !== action.payload) };
-    case "ADD_PROCEDURE":
-      return { ...state, procedures: [...state.procedures, action.payload] };
-    case "UPDATE_PROCEDURE":
-      return { ...state, procedures: state.procedures.map((p) => p.id === action.payload.id ? action.payload : p) };
-    case "DELETE_PROCEDURE":
-      return { ...state, procedures: state.procedures.filter((p) => p.id !== action.payload) };
     case "ADD_ORDER":
       return { ...state, orders: [...state.orders, action.payload] };
     case "UPDATE_ORDER":
@@ -292,7 +282,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (state.loaded) {
       markDirty(state);
     }
-  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.procedures.length, state.orders.length, state.inventory.length, state.loaded]);
+  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.orders.length, state.inventory.length, state.loaded]);
 
   const load = async () => {
     try {
@@ -303,15 +293,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(cloud.instruments?.map((i: Instrument) => db.putInstrument(i)) ?? []);
         await Promise.all(cloud.experiments?.map((e: Experiment) => db.putExperiment(e)) ?? []);
         await Promise.all(cloud.orders?.map((o: Order) => db.putOrder(o)) ?? []);
-        await Promise.all(cloud.procedures?.map((p: Procedure) => db.putProcedure(p)) ?? []);
+        await Promise.all(cloud.inventory?.map((iv: InventoryItem) => db.putInventoryItem(iv)) ?? []);
       }
 
-      const [suppliers, materials, instruments, experiments, procedures, orders, inventory] = await Promise.all([
+      const [suppliers, materials, instruments, experiments, orders, inventory] = await Promise.all([
         db.getAllSuppliers(),
         db.getAllMaterials(),
         db.getAllInstruments(),
         db.getAllExperiments(),
-        db.getAllProcedures(),
         db.getAllOrders(),
         db.getAllInventory(),
       ]);
@@ -330,8 +319,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (suppliers.length || materials.length || instruments.length || experiments.length || procedures.length || orders.length || inventory.length) {
-        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, procedures, orders, inventory, loaded: true } });
+      if (suppliers.length || materials.length || instruments.length || experiments.length || orders.length || inventory.length) {
+        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, orders, inventory, loaded: true } });
       } else {
         await Promise.all(defaultState.suppliers.map((s) => db.putSupplier(s)));
         await Promise.all(defaultState.materials.map((m) => db.putMaterial(m)));
@@ -339,7 +328,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(defaultState.experiments.map((e) => db.putExperiment(e)));
         await Promise.all(defaultState.orders.map((o) => db.putOrder(o)));
         await Promise.all(defaultState.inventory.map((iv) => db.putInventoryItem(iv)));
-        await Promise.all(defaultState.procedures.map((p) => db.putProcedure(p)));
         dispatch({ type: "HYDRATE", payload: { loaded: true } });
       }
     } catch {
@@ -419,15 +407,6 @@ export function useInventoryActions() {
     add: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "ADD_INVENTORY", payload: i }); }, [dispatch]),
     update: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "UPDATE_INVENTORY", payload: i }); }, [dispatch]),
     remove: useCallback(async (id: string) => { await db.deleteInventoryItem(id); dispatch({ type: "DELETE_INVENTORY", payload: id }); }, [dispatch]),
-  };
-}
-
-export function useProcedureActions() {
-  const { dispatch } = useStore();
-  return {
-    add: useCallback(async (p: Procedure) => { await db.putProcedure(p); dispatch({ type: "ADD_PROCEDURE", payload: p }); }, [dispatch]),
-    update: useCallback(async (p: Procedure) => { await db.putProcedure(p); dispatch({ type: "UPDATE_PROCEDURE", payload: p }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteProcedure(id); dispatch({ type: "DELETE_PROCEDURE", payload: id }); }, [dispatch]),
   };
 }
 

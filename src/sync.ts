@@ -35,7 +35,6 @@ export async function triggerSync(state: AppState) {
       materials: state.materials,
       instruments: state.instruments,
       experiments: state.experiments,
-      procedures: state.procedures,
       orders: state.orders,
       inventory: state.inventory,
       timestamp: Date.now(),
@@ -72,7 +71,6 @@ export async function restoreFromCloud(): Promise<Partial<AppState> | null> {
         materials: parsed.materials,
         instruments: parsed.instruments || [],
         experiments: parsed.experiments,
-        procedures: parsed.procedures || [],
         orders: parsed.orders || [],
         inventory: parsed.inventory || [],
       };

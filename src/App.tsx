@@ -15,7 +15,6 @@ import {
   ShoppingCart,
   LogOut,
   User,
-  FileText,
 } from "lucide-react";
 import { StoreProvider, useStore } from "./store";
 import { ThemeProvider, useTheme } from "./theme";
@@ -26,10 +25,9 @@ import Instruments from "./components/Instruments";
 import Experiments from "./components/Experiments";
 import Orders from "./components/Orders";
 import Inventory from "./components/Inventory";
-import Procedures from "./components/Procedures";
 import SettingsModal from "./components/Settings";
 
-type Tab = "experiments" | "materials" | "orders" | "instruments" | "suppliers" | "inventory" | "procedures";
+type Tab = "experiments" | "materials" | "orders" | "instruments" | "suppliers" | "inventory";
 
 function SidebarNav() {
   const [tab, setTab] = useState<Tab>("experiments");
@@ -40,7 +38,6 @@ function SidebarNav() {
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "experiments", label: "Experiments", icon: <FlaskConical size={18} /> },
-    { key: "procedures", label: "Procedures", icon: <FileText size={18} /> },
     { key: "materials", label: "Materials", icon: <Package size={18} /> },
     { key: "orders", label: "Orders", icon: <ShoppingCart size={18} /> },
     { key: "instruments", label: "Tools", icon: <Wrench size={18} /> },
@@ -128,7 +125,6 @@ function SidebarNav() {
         {tab === "orders" && <Orders />}
         {tab === "instruments" && <Instruments />}
         {tab === "experiments" && <Experiments />}
-        {tab === "procedures" && <Procedures />}
         {tab === "inventory" && <Inventory />}
       </main>
 

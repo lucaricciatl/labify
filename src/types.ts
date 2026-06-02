@@ -1,23 +1,3 @@
-export interface ProcedureStep {
-  id: string;
-  order: number;
-  title: string;
-  description: string;
-  durationMinutes?: number;
-  safetyNotes?: string;
-  image?: string; // base64 or URL
-}
-
-export interface Procedure {
-  id: string;
-  name: string;
-  experimentId?: string; // optional link to an experiment
-  description?: string;
-  steps: ProcedureStep[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface DocumentLink {
   id: string;
   label: string;
