@@ -97,6 +97,10 @@ async function sendVerificationEmail(to: string, token: string, name?: string): 
 // ─── Middleware ──────────────────────────────────────────────────
 const corsOrigin = process.env.CORS_ORIGIN;
 app.use(cors(corsOrigin ? { origin: corsOrigin } : undefined));
+app.use((req, _res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${req.headers["user-agent"]?.split(" ")[0] || "unknown"} - Origin: ${req.headers.origin || "-"} - Host: ${req.headers.host || "-"}`);
+  next();
+});
 app.use(express.json({ limit: "10mb" }));
 
 interface AuthRequest extends express.Request {
