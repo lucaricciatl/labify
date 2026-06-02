@@ -77,6 +77,15 @@ const init = db.transaction(() => {
       verification_token TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS procedures (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      experiment_id TEXT,
+      description TEXT,
+      steps_json TEXT DEFAULT '[]',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 });
 init();

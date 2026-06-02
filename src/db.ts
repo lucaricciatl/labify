@@ -1,7 +1,7 @@
-import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem } from "./types";
+import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem, Procedure } from "./types";
 
 const DB_NAME = "LabifyDB";
-const DB_VERSION = 11;
+const DB_VERSION = 12;
 const MIGRATION_BACKUP_PREFIX = "labify-migration-backup";
 
 const STORES = [
@@ -10,7 +10,7 @@ const STORES = [
   { name: "instruments", keyPath: "code" },
   { name: "experiments", keyPath: "id" },
   { name: "orders", keyPath: "id" },
-  { name: "inventory", keyPath: "id" },
+  { name: "procedures", keyPath: "id" },
 ] as const;
 
 function migrationBackupKey(version: number) {
@@ -127,6 +127,11 @@ export const db = {
   async putExperiment(e: Experiment): Promise<void> { await withStore("experiments", "readwrite", (store) => store.put(e)); },
   async deleteExperiment(id: string): Promise<void> { await withStore("experiments", "readwrite", (store) => store.delete(id)); },
 
+  // Procedures
+  async getAllProcedures(): Promise<Procedure[]> { return withStore("procedures", "readonly", (s) => s.getAll()); },
+  async putProcedure(p: Procedure): Promise<void> { await withStore("procedures", "readwrite", (store) => store.put(p)); },
+  async deleteProcedure(id: string): Promise<void> { await withStore("procedures", "readwrite", (store) => store.delete(id)); },
+
   // Orders
   async getAllOrders(): Promise<Order[]> { return withStore("orders", "readonly", (s) => s.getAll()); },
   async putOrder(o: Order): Promise<void> { await withStore("orders", "readwrite", (store) => store.put(o)); },
@@ -142,6 +147,7 @@ export const db = {
     await withStore("materials", "readwrite", (store) => store.clear());
     await withStore("instruments", "readwrite", (store) => store.clear());
     await withStore("experiments", "readwrite", (store) => store.clear());
+    await withStore("procedures", "readwrite", (store) => store.clear());
     await withStore("orders", "readwrite", (store) => store.clear());
     await withStore("inventory", "readwrite", (store) => store.clear());
   },
