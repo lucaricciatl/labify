@@ -380,26 +380,47 @@ export default function ExperimentDesigns() {
                   </div>
 
                   {/* Actual execution / deviation */}
-                  <div style={{ marginTop: 10, padding: 10, background: "var(--bg)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                    <strong style={{ fontSize: "12px", color: "var(--text-h)", textTransform: "uppercase", letterSpacing: "0.3px" }}>Execution &amp; Deviation</strong>
-                    <input placeholder="Actual result observed" value={step.actualResult || ""} onChange={(e) => updateStep(i, { actualResult: e.target.value })} style={{ marginTop: 6, marginBottom: 6 }} />
-                    <textarea placeholder="Deviation from standard procedure / notes" value={step.deviationNotes || ""} onChange={(e) => updateStep(i, { deviationNotes: e.target.value })} rows={2} style={{ marginBottom: 6 }} />
-                    <label className="checkbox-field" style={{ marginBottom: 6 }}>
-                      <input type="checkbox" checked={step.completed} onChange={(e) => updateStep(i, { completed: e.target.checked })} />
-                      <label>Step completed</label>
-                    </label>
-                    <div className="image-upload" style={{ gap: "0.5rem" }}>
-                      {step.actualImage ? (
-                        <div style={{ position: "relative" }}>
-                          <img src={step.actualImage} alt="actual" className="image-preview" style={{ maxHeight: 100 }} />
-                          <button className="icon-btn danger" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }} onClick={() => updateStep(i, { actualImage: "" })}><X size={12} color="#fff" /></button>
-                        </div>
-                      ) : (
-                        <div className="image-preview-placeholder"><ImageIcon size={20} /></div>
-                      )}
-                      <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => { setActiveImageStep({ idx: i, type: "actual" }); fileRef.current?.click(); }}>
-                        {step.actualImage ? "Change" : "Upload actual photo"}
-                      </button>
+                  <div style={{ marginTop: 14, background: "#FFFFFF", borderRadius: 10, border: "1px solid #E0E0E0", overflow: "hidden" }}>
+                    <div style={{ padding: "10px 14px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "#0D9488" }}>
+                      📝 Execution &amp; Deviation Record
+                    </div>
+                    <div style={{ padding: "14px" }}>
+                      <div className="field" style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: "11px", color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4, display: "block" }}>Actual Result Observed</label>
+                        <input
+                          placeholder="What was actually observed during execution..."
+                          value={step.actualResult || ""}
+                          onChange={(e) => updateStep(i, { actualResult: e.target.value })}
+                          style={{ marginBottom: 0 }}
+                        />
+                      </div>
+                      <div className="field" style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: "11px", color: "#C62828", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4, display: "block" }}>Deviation / Notes</label>
+                        <textarea
+                          placeholder="Any deviation from the planned procedure..."
+                          value={step.deviationNotes || ""}
+                          onChange={(e) => updateStep(i, { deviationNotes: e.target.value })}
+                          rows={2}
+                          style={{ marginBottom: 0 }}
+                        />
+                      </div>
+                      <label className="checkbox-field" style={{ marginBottom: 12 }}>
+                        <input type="checkbox" checked={step.completed} onChange={(e) => updateStep(i, { completed: e.target.checked })} />
+                        <span>Step completed</span>
+                      </label>
+                      <div className="image-upload" style={{ gap: "0.5rem" }}>
+                        {step.actualImage ? (
+                          <div style={{ position: "relative" }}>
+                            <img src={step.actualImage} alt="actual" className="image-preview" style={{ maxHeight: 100, borderRadius: 6 }} />
+                            <button className="icon-btn danger" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }} onClick={() => updateStep(i, { actualImage: "" })}><X size={12} color="#fff" /></button>
+                          </div>
+                        ) : (
+                          <div className="image-preview-placeholder"><ImageIcon size={20} /></div>
+                        )}
+                        <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => { setActiveImageStep({ idx: i, type: "actual" }); fileRef.current?.click(); }}>
+                          {step.actualImage ? "Change photo" : "Upload actual photo"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
