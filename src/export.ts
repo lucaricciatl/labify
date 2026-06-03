@@ -438,7 +438,7 @@ export function downloadExperimentExcel(
 }
 
 import type { ExperimentDesign, Experiment } from "./types";
-import { Document, Packer, Paragraph, HeadingLevel, Table, TableCell, TableRow, WidthType, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableCell, TableRow, WidthType, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -450,8 +450,8 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
     rows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ text: String(step.order + 1), alignment: AlignmentType.CENTER })] }),
-          new TableCell({ children: [new Paragraph({ text: step.title, bold: true })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun(String(step.order + 1))] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: step.title, bold: true })] })] }),
           new TableCell({ children: [new Paragraph(step.description)] }),
           new TableCell({ children: [new Paragraph(step.expectedResult || "—")] }),
           new TableCell({ children: [new Paragraph(step.actualResult || "—")] }),

@@ -3,7 +3,6 @@ import {
   Pencil,
   Trash2,
   Plus,
-  FileText,
   Search,
   Image as ImageIcon,
   Clock,
