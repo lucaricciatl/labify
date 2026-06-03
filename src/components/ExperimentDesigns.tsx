@@ -429,8 +429,8 @@ export default function ExperimentDesigns() {
             ref={printRef}
             style={{
               width: 794,
-              padding: "48px 56px",
-              background: "#FAFAFA",
+              padding: "40px 48px",
+              background: "#FFFFFF",
               color: "#212121",
               fontFamily: "'Montserrat', 'Segoe UI', system-ui, sans-serif",
               fontSize: 11,
@@ -598,13 +598,17 @@ export default function ExperimentDesigns() {
                       <div
                         style={{
                           marginLeft: 46,
-                          background: "#FFF8E1",
-                          border: "1px solid #FFE082",
+                          background: "#FFFFFF",
+                          border: "1px solid #E0E0E0",
                           borderRadius: 10,
-                          padding: "16px 20px",
+                          overflow: "hidden",
                         }}
                       >
-                        <div style={{ fontSize: 9, color: "#F57F17", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Execution &amp; Deviation Record</div>
+                        <div style={{ padding: "10px 16px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", display: "flex", alignItems: "center", gap: 8 }}
+                        >
+                          📝 Execution &amp; Deviation Record
+                        </div>
+                        <div style={{ padding: "14px 16px" }}>
 
                         {step.actualResult && (
                           <div style={{ marginBottom: 8 }}>
@@ -616,21 +620,26 @@ export default function ExperimentDesigns() {
                         {step.deviationNotes && (
                           <div
                             style={{
-                              marginBottom: 8,
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 8,
+                              color: "#C62828",
+                              fontSize: 10,
+                              fontWeight: 600,
+                              marginTop: 8,
+                              padding: "8px 12px",
                               background: "#FFEBEE",
                               borderLeft: "3px solid #EF5350",
-                              padding: "8px 12px",
                               borderRadius: "0 6px 6px 0",
-                              fontSize: 10,
-                              color: "#C62828",
-                              fontWeight: 500,
                             }}
                           >
-                            🔴 Deviation: {step.deviationNotes}
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+                            <span>{step.deviationNotes}</span>
                           </div>
                         )}
 
-                        {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 320, maxHeight: 240, borderRadius: 8, border: "1px solid #FFE082", marginTop: 6, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+                        {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 320, maxHeight: 240, borderRadius: 8, border: "1px solid #E0E0E0", marginTop: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -729,10 +738,17 @@ export default function ExperimentDesigns() {
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
                       {(step.actualResult || step.deviationNotes || step.actualImage) && (
                         <div className="step-actual-box">
-                          <strong>Execution &amp; Deviation Record</strong>
-                          {step.actualResult && <p>{step.actualResult}</p>}
-                          {step.deviationNotes && <div className="step-deviation">🔴 {step.deviationNotes}</div>}
-                          {step.actualImage && <img src={step.actualImage} alt="actual" className="step-image" />}
+                          <div className="actual-header">📝 Execution &amp; Deviation Record</div>
+                          <div className="actual-body">
+                            {step.actualResult && <p>{step.actualResult}</p>}
+                            {step.deviationNotes && (
+                              <div className="step-deviation">
+                                <span className="deviation-icon">⚠️</span>
+                                <span>{step.deviationNotes}</span>
+                              </div>
+                            )}
+                            {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                          </div>
                         </div>
                       )}
                     </div>
