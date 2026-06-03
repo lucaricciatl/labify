@@ -14,6 +14,7 @@ import {
   ChevronUp,
   X,
   FileType2,
+  Eye,
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
 import type { ExperimentDesign, DesignStep } from "../types";
@@ -74,6 +75,8 @@ export default function ExperimentDesigns() {
   const { state } = useStore();
   const actions = useExperimentDesignActions();
   const [modal, setModal] = useState(false);
+  const [previewModal, setPreviewModal] = useState(false);
+  const [previewDesign, setPreviewDesign] = useState<ExperimentDesign | null>(null);
   const [editing, setEditing] = useState<ExperimentDesign | null>(null);
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -101,6 +104,11 @@ export default function ExperimentDesigns() {
       steps: d.steps.map((s) => ({ ...s })),
     });
     setModal(true);
+  };
+
+  const openPreview = (d: ExperimentDesign) => {
+    setPreviewDesign(d);
+    setPreviewModal(true);
   };
 
   const save = async () => {
@@ -239,6 +247,7 @@ export default function ExperimentDesigns() {
                     <td>{d.updatedAt || d.createdAt}</td>
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(d)}><Pencil size={14} /></button>
+                      <button className="icon-btn" title="Preview" onClick={() => openPreview(d)}><Eye size={14} /></button>
                       <button className="icon-btn" title="Export Word" onClick={() => exportWord(d)}><FileType2 size={14} /></button>
                       <button className="icon-btn" title="Export PDF" onClick={() => exportPdf(d)}><FileDown size={14} /></button>
                       <button className="icon-btn danger" title="Delete" onClick={() => del(d.id)}><Trash2 size={14} /></button>
@@ -247,18 +256,18 @@ export default function ExperimentDesigns() {
                   {isOpen && (
                     <tr className="exp-detail">
                       <td colSpan={7}>
-                        <div className="exp-detail-box">
-                          {d.objective && <p style={{ marginBottom: 8, opacity: 0.8 }}><strong>Objective:</strong> {d.objective}</p>}
-                          {d.hypothesis && <p style={{ marginBottom: 12, opacity: 0.8 }}><strong>Hypothesis:</strong> {d.hypothesis}</p>}
+                        <div className="design-preview-container">
+                          {d.objective && <p style={{ marginBottom: 8, color: "#37474F", fontSize: 13 }}><strong style={{ color: "#0D9488" }}>Objective:</strong> {d.objective}</p>}
+                          {d.hypothesis && <p style={{ marginBottom: 12, color: "#37474F", fontSize: 13 }}><strong style={{ color: "#0D9488" }}>Hypothesis:</strong> {d.hypothesis}</p>}
                           <div className="subtable-box">
-                            <strong>Steps</strong>
+                            <strong style={{ color: "#0D9488", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>Steps</strong>
                             <div className="step-preview-list">
                               {d.steps.map((step, idx) => (
                                 <div className={`step-preview ${step.completed ? "step-completed" : ""}`} key={step.id}>
                                   <div className="step-preview-header">
                                     <span className="step-number">{idx + 1}</span>
                                     <div style={{ flex: 1 }}>
-                                      <strong style={{ fontSize: 13 }}>{step.title}</strong>
+                                      <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
                                       {step.durationMinutes && <span className="step-meta"><Clock size={12} /> {step.durationMinutes} min</span>}
                                     </div>
                                     <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>
@@ -663,6 +672,87 @@ export default function ExperimentDesigns() {
           </div>
         </div>
       )}
+      {/* Preview Modal */}
+      <Modal open={previewModal} onClose={() => setPreviewModal(false)} title="Document Preview">
+        {previewDesign && (
+          <div style={{ maxHeight: "70vh", overflowY: "auto", padding: "8px 4px" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 12, padding: "32px 40px", border: "1px solid #E0E0E0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ borderBottom: "2px solid #0D9488", paddingBottom: 16, marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 6 }}>Experiment Design Protocol</div>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a1a", fontFamily: "'Montserrat', system-ui, sans-serif" }}>{previewDesign.name}</h1>
+                <div style={{ marginTop: 10, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>ID</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{previewDesign.id}</div></div>
+                  {previewDesign.experimentId && (
+                    <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>Linked</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{state.experiments.find((e) => e.id === previewDesign.experimentId)?.name || previewDesign.experimentId}</div></div>
+                  )}
+                  <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>Date</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{previewDesign.updatedAt || previewDesign.createdAt}</div></div>
+                </div>
+              </div>
+
+              {(previewDesign.objective || previewDesign.hypothesis) && (
+                <div style={{ marginBottom: 20 }}>
+                  {previewDesign.objective && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Objective</div>
+                      <p style={{ margin: 0, fontSize: 12.5, color: "#37474F", lineHeight: 1.6 }}>{previewDesign.objective}</p>
+                    </div>
+                  )}
+                  {previewDesign.hypothesis && (
+                    <div>
+                      <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Hypothesis</div>
+                      <p style={{ margin: 0, fontSize: 12.5, color: "#37474F", lineHeight: 1.6 }}>{previewDesign.hypothesis}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14 }}>Procedure Steps</div>
+              <div className="step-preview-list">
+                {previewDesign.steps.map((step, idx) => (
+                  <div className={`step-preview ${step.completed ? "step-completed" : ""}`} key={step.id}>
+                    <div className="step-preview-header">
+                      <span className="step-number">{idx + 1}</span>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
+                        {step.durationMinutes && <span className="step-meta"><Clock size={12} /> {step.durationMinutes} min</span>}
+                      </div>
+                      <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>{step.completed ? "Completed" : "Pending"}</span>
+                    </div>
+                    <div className="step-preview-body">
+                      <p className="step-desc">{step.description}</p>
+                      {step.safetyNotes && (
+                        <div className="step-safety"><AlertTriangle size={12} /> {step.safetyNotes}</div>
+                      )}
+                      {step.expectedResult && (
+                        <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
+                      )}
+                      {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                        <div className="step-actual-box">
+                          <strong>Execution &amp; Deviation Record</strong>
+                          {step.actualResult && <p>{step.actualResult}</p>}
+                          {step.deviationNotes && <div className="step-deviation">🔴 {step.deviationNotes}</div>}
+                          {step.actualImage && <img src={step.actualImage} alt="actual" className="step-image" />}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {previewDesign.conclusion && (
+                <div className="conclusion-card" style={{ marginTop: 20 }}>
+                  <strong>Conclusion:</strong> {previewDesign.conclusion}
+                </div>
+              )}
+
+              <div style={{ textAlign: "center", marginTop: 24, paddingTop: 16, borderTop: "1px solid #ECEFF1", fontSize: 10, color: "#90A4AE" }}>
+                Generated by Labify · {previewDesign.steps.filter((s) => s.completed).length}/{previewDesign.steps.length} steps completed
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
