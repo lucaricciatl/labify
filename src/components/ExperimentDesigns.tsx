@@ -407,7 +407,7 @@ export default function ExperimentDesigns() {
 
       <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
         if (activeImageStep) {
-          onImageChange(activeImageStep.idx, activeImageStep.type, e);
+          onImageChange(activeImageStep.idx, e);
           setActiveImageStep(null);
         }
       }} />
@@ -505,13 +505,11 @@ export default function ExperimentDesigns() {
                     pageBreakInside: "avoid",
                   }}
                 >
-                  {/* Step accent bar */}
+                    /* Step accent bar */
                   <div
                     style={{
                       height: 4,
-                      background: step.completed
-                        ? "#0D9488"
-                        : "#CFD8DC",
+                      background: "#0D9488",
                     }}
                   />
 
@@ -544,11 +542,6 @@ export default function ExperimentDesigns() {
                           </div>
                         )}
                       </div>
-                      {step.completed ? (
-                        <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
-                      ) : (
-                        <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
-                      )}
                     </div>
 
                     {/* Description */}
