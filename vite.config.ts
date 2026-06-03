@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const host = process.env.HOST ?? process.env.LISTEN ?? true
+const host: string | boolean = process.env.HOST ?? process.env.LISTEN ?? true
 const port = Number(process.env.PORT) || 5173
 const previewPort = Number(process.env.PREVIEW_PORT) || 4173
 
