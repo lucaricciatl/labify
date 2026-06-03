@@ -13,7 +13,6 @@ export default defineConfig({
     strictPort: true,
     cors: true,
     hmr: {
-      host: true,
       port,
     },
     proxy: {
