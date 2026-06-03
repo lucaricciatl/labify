@@ -447,47 +447,119 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
   const linkedExp = experiments.find((e) => e.id === design.experimentId);
   const rows: TableRow[] = [];
   for (const step of design.steps) {
+    const statusText = step.completed ? "✓ Completed" : "○ Pending";
+    const statusColor = step.completed ? "0D9488" : "90A4AE";
     rows.push(
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun(String(step.order + 1))] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: step.title, bold: true })] })] }),
-          new TableCell({ children: [new Paragraph(step.description)] }),
-          new TableCell({ children: [new Paragraph(step.expectedResult || "—")] }),
-          new TableCell({ children: [new Paragraph(step.actualResult || "—")] }),
-          new TableCell({ children: [new Paragraph(step.deviationNotes || "—")] }),
+          new TableCell({
+            verticalAlign: "center",
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(step.order + 1), bold: true, font: "Montserrat", color: "0D9488", size: 20 })] })],
+          }),
+          new TableCell({
+            verticalAlign: "center",
+            children: [
+              new Paragraph({ children: [new TextRun({ text: step.title, bold: true, font: "Montserrat", size: 22 })] }),
+              new Paragraph({ children: [new TextRun({ text: step.description, font: "Montserrat", size: 20, color: "546E7A" })] }),
+              step.durationMinutes ? new Paragraph({ children: [new TextRun({ text: `⏱ ${step.durationMinutes} min`, font: "Montserrat", size: 18, color: "90A4AE" })] }) : new Paragraph({ text: "" }),
+            ],
+          }),
+          new TableCell({
+            verticalAlign: "center",
+            children: [
+              new Paragraph({ children: [new TextRun({ text: step.expectedResult || "—", font: "Montserrat", size: 20, color: "0D9488" })] }),
+              new Paragraph({ children: [new TextRun({ text: step.actualResult || "—", font: "Montserrat", size: 20, color: "546E7A" })] }),
+              step.deviationNotes ? new Paragraph({ children: [new TextRun({ text: `🔴 ${step.deviationNotes}`, font: "Montserrat", size: 18, color: "C62828", bold: true })] }) : new Paragraph({ text: "" }),
+            ],
+          }),
+          new TableCell({
+            verticalAlign: "center",
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: statusText, bold: true, font: "Montserrat", size: 18, color: statusColor })] })],
+          }),
         ],
       })
     );
   }
 
   const children: (Paragraph | Table)[] = [
-    new Paragraph({ text: design.name, heading: HeadingLevel.TITLE, spacing: { after: 200 } }),
-    new Paragraph({ text: `ID: ${design.id}`, spacing: { after: 100 } }),
+    // Title
+    new Paragraph({
+      children: [new TextRun({ text: design.name, bold: true, font: "Montserrat", size: 36, color: "0D9488" })],
+      spacing: { after: 200 },
+      alignment: AlignmentType.LEFT,
+    }),
+    // Metadata
+    new Paragraph({
+      children: [
+        new TextRun({ text: `ID: `, bold: true, font: "Montserrat", size: 18, color: "78909C" }),
+        new TextRun({ text: design.id, font: "Montserrat", size: 18, color: "455A64" }),
+      ],
+      spacing: { after: 100 },
+    }),
   ];
-  if (linkedExp) children.push(new Paragraph({ text: `Linked experiment: ${linkedExp.name} (${linkedExp.id})`, spacing: { after: 100 } }));
-  if (design.objective) {
-    children.push(new Paragraph({ text: "Objective", heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 } }));
-    children.push(new Paragraph(design.objective));
-  }
-  if (design.hypothesis) {
-    children.push(new Paragraph({ text: "Hypothesis", heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 100 } }));
-    children.push(new Paragraph(design.hypothesis));
+
+  if (linkedExp) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: `Linked Experiment: `, bold: true, font: "Montserrat", size: 18, color: "78909C" }),
+          new TextRun({ text: `${linkedExp.name} (${linkedExp.id})`, font: "Montserrat", size: 18, color: "455A64" }),
+        ],
+        spacing: { after: 200 },
+      })
+    );
   }
 
-  children.push(new Paragraph({ text: "Steps", heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 200 } }));
+  if (design.objective) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: "OBJECTIVE", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
+        spacing: { before: 300, after: 100 },
+      }),
+      new Paragraph({ children: [new TextRun({ text: design.objective, font: "Montserrat", size: 22, color: "37474F" })], spacing: { after: 200 } })
+    );
+  }
+
+  if (design.hypothesis) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: "HYPOTHESIS", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
+        spacing: { before: 300, after: 100 },
+      }),
+      new Paragraph({ children: [new TextRun({ text: design.hypothesis, font: "Montserrat", size: 22, color: "37474F" })], spacing: { after: 200 } })
+    );
+  }
+
+  // Steps Table
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: "PROCEDURE STEPS", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
+      spacing: { before: 400, after: 200 },
+    })
+  );
+
   children.push(
     new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Step", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Description", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Expected", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Actual", bold: true })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Deviation", bold: true })] })] }),
+            new TableCell({
+              shading: { fill: "0D9488" },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "#", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
+            }),
+            new TableCell({
+              shading: { fill: "0D9488" },
+              children: [new Paragraph({ children: [new TextRun({ text: "Step Details", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
+            }),
+            new TableCell({
+              shading: { fill: "0D9488" },
+              children: [new Paragraph({ children: [new TextRun({ text: "Expected / Actual / Deviation", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
+            }),
+            new TableCell({
+              shading: { fill: "0D9488" },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Status", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
+            }),
           ],
         }),
         ...rows,
@@ -496,12 +568,35 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
   );
 
   if (design.conclusion) {
-    children.push(new Paragraph({ text: "Conclusion", heading: HeadingLevel.HEADING_2, spacing: { before: 300, after: 100 } }));
-    children.push(new Paragraph(design.conclusion));
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: "CONCLUSION", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
+        spacing: { before: 400, after: 100 },
+      }),
+      new Paragraph({ children: [new TextRun({ text: design.conclusion, font: "Montserrat", size: 22, color: "37474F" })], spacing: { after: 200 } })
+    );
   }
-  children.push(new Paragraph({ text: `Generated by Labify on ${new Date().toLocaleDateString()}`, spacing: { before: 400 }, alignment: AlignmentType.RIGHT }));
 
-  const doc = new Document({ sections: [{ children }] });
+  // Footer
+  const completed = design.steps.filter((s) => s.completed).length;
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Generated by Labify · ${completed}/${design.steps.length} steps completed · ${new Date().toLocaleDateString()}`, font: "Montserrat", size: 16, color: "90A4AE", italics: true }),
+      ],
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 400 },
+    })
+  );
+
+  const doc = new Document({
+    sections: [{
+      properties: {
+        page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } },
+      },
+      children,
+    }],
+  });
   const blob = await Packer.toBlob(doc);
   saveAs(blob, `${design.id}_${design.name.replace(/\s+/g, "_")}.docx`);
 }

@@ -259,32 +259,38 @@ export default function ExperimentDesigns() {
                                 <div className={`step-preview ${step.completed ? "step-completed" : ""}`} key={step.id}>
                                   <div className="step-preview-header">
                                     <span className="step-number">{idx + 1}</span>
-                                    <strong>{step.title}</strong>
-                                    {step.durationMinutes && <span className="step-meta"><Clock size={12} /> {step.durationMinutes} min</span>}
-                                    {step.completed ? <CheckCircle2 size={14} color="var(--accent)" /> : <Circle size={14} color="#ccc" />}
-                                  </div>
-                                  <p className="step-desc">{step.description}</p>
-                                  {step.safetyNotes && (
-                                    <div className="step-safety"><AlertTriangle size={12} /> {step.safetyNotes}</div>
-                                  )}
-                                  {step.expectedResult && (
-                                    <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
-                                  )}
-                                  {step.image && <img src={step.image} alt="planned" className="step-image" />}
-                                  {(step.actualResult || step.deviationNotes || step.actualImage) && (
-                                    <div className="step-actual-box">
-                                      <strong>Execution / Deviation</strong>
-                                      {step.actualResult && <p>{step.actualResult}</p>}
-                                      {step.deviationNotes && <div className="step-deviation">⚠️ {step.deviationNotes}</div>}
-                                      {step.actualImage && <img src={step.actualImage} alt="actual" className="step-image" />}
+                                    <div style={{ flex: 1 }}>
+                                      <strong style={{ fontSize: 13 }}>{step.title}</strong>
+                                      {step.durationMinutes && <span className="step-meta"><Clock size={12} /> {step.durationMinutes} min</span>}
                                     </div>
-                                  )}
+                                    <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>
+                                      {step.completed ? "Completed" : "Pending"}
+                                    </span>
+                                  </div>
+                                  <div className="step-preview-body">
+                                    <p className="step-desc">{step.description}</p>
+                                    {step.safetyNotes && (
+                                      <div className="step-safety"><AlertTriangle size={12} /> {step.safetyNotes}</div>
+                                    )}
+                                    {step.expectedResult && (
+                                      <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
+                                    )}
+                                    {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                                    {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                                      <div className="step-actual-box">
+                                        <strong>Execution &amp; Deviation Record</strong>
+                                        {step.actualResult && <p>{step.actualResult}</p>}
+                                        {step.deviationNotes && <div className="step-deviation">🔴 {step.deviationNotes}</div>}
+                                        {step.actualImage && <img src={step.actualImage} alt="actual" className="step-image" />}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           </div>
                           {d.conclusion && (
-                            <div className="cost-summary" style={{ marginTop: 12 }}>
+                            <div className="conclusion-card">
                               <strong>Conclusion:</strong> {d.conclusion}
                             </div>
                           )}
@@ -409,39 +415,252 @@ export default function ExperimentDesigns() {
         }
       }} />
 
-      {/* Hidden print target for PDF */}
+      {/* Hidden print target for PDF — Material Design + Montserrat */}
       {printTarget && (
-        <div style={{ position: "absolute", left: "-9999px", top: 0, width: 800 }}>
-          <div ref={printRef} style={{ padding: 24, background: "#fff", color: "#1a1a1a", fontFamily: "system-ui, sans-serif" }}>
-            <div style={{ borderBottom: "2px solid #0D9488", paddingBottom: 12, marginBottom: 20 }}>
-              <h1 style={{ margin: 0, fontSize: 22, color: "#0D9488" }}>{printTarget.name}</h1>
-              <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>ID: {printTarget.id}</div>
-            </div>
-            {printTarget.objective && <p style={{ marginBottom: 12, fontSize: 13 }}><strong>Objective:</strong> {printTarget.objective}</p>}
-            {printTarget.hypothesis && <p style={{ marginBottom: 16, fontSize: 13 }}><strong>Hypothesis:</strong> {printTarget.hypothesis}</p>}
-            {printTarget.steps.map((step, idx) => (
-              <div key={step.id} style={{ marginBottom: 24, pageBreakInside: "avoid" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <span style={{ background: step.completed ? "#0D9488" : "#ccc", color: "#fff", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{idx + 1}</span>
-                  <strong style={{ fontSize: 14 }}>{step.title}</strong>
-                  {step.durationMinutes && <span style={{ fontSize: 11, color: "#666", marginLeft: "auto" }}>⏱ {step.durationMinutes} min</span>}
+        <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
+          <div
+            ref={printRef}
+            style={{
+              width: 794,
+              padding: "48px 56px",
+              background: "#FAFAFA",
+              color: "#212121",
+              fontFamily: "'Montserrat', 'Segoe UI', system-ui, sans-serif",
+              fontSize: 11,
+              lineHeight: 1.6,
+              WebkitFontSmoothing: "antialiased",
+            }}
+          >
+            <style>{"@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');"}</style>
+
+            {/* Header Card */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 12,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)",
+                padding: "28px 32px",
+                marginBottom: 24,
+                borderLeft: "4px solid #0D9488",
+              }}
+            >
+              <div style={{ fontSize: 10, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>
+                Experiment Design Protocol
+              </div>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#1a1a1a", letterSpacing: "-0.5px" }}>{printTarget.name}</h1>
+              <div style={{ marginTop: 12, display: "flex", gap: 24, flexWrap: "wrap" }}>
+                <div>
+                  <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>ID</span>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.id}</div>
                 </div>
-                <p style={{ marginLeft: 32, marginBottom: 8, fontSize: 12, lineHeight: 1.6 }}>{step.description}</p>
-                {step.expectedResult && <p style={{ marginLeft: 32, marginBottom: 8, fontSize: 12, color: "#0D9488" }}><strong>Expected:</strong> {step.expectedResult}</p>}
-                {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 32, maxWidth: 350, maxHeight: 250, borderRadius: 6, border: "1px solid #eee", marginBottom: 8 }} />}
-                {(step.actualResult || step.deviationNotes || step.actualImage) && (
-                  <div style={{ marginLeft: 32, background: "#FEF3C7", borderLeft: "3px solid #F59E0B", padding: "8px 12px", borderRadius: 4 }}>
-                    <strong style={{ fontSize: 11, display: "block", marginBottom: 4 }}>Execution &amp; Deviation</strong>
-                    {step.actualResult && <p style={{ fontSize: 12, margin: "0 0 4px" }}>{step.actualResult}</p>}
-                    {step.deviationNotes && <p style={{ fontSize: 11, margin: 0, color: "#92400E" }}>⚠️ {step.deviationNotes}</p>}
-                    {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 300, maxHeight: 220, borderRadius: 6, border: "1px solid #eee", marginTop: 6 }} />}
+                {printTarget.experimentId && (
+                  <div>
+                    <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Linked Experiment</span>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{state.experiments.find((e) => e.id === printTarget.experimentId)?.name || printTarget.experimentId}</div>
+                  </div>
+                )}
+                <div>
+                  <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</span>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.updatedAt || printTarget.createdAt}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Objective & Hypothesis */}
+            {(printTarget.objective || printTarget.hypothesis) && (
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  borderRadius: 12,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)",
+                  padding: "24px 32px",
+                  marginBottom: 24,
+                }}
+              >
+                {printTarget.objective && (
+                  <div style={{ marginBottom: printTarget.hypothesis ? 16 : 0 }}>
+                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Objective</div>
+                    <p style={{ margin: 0, fontSize: 11.5, color: "#37474F", lineHeight: 1.7 }}>{printTarget.objective}</p>
+                  </div>
+                )}
+                {printTarget.hypothesis && (
+                  <div>
+                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Hypothesis</div>
+                    <p style={{ margin: 0, fontSize: 11.5, color: "#37474F", lineHeight: 1.7 }}>{printTarget.hypothesis}</p>
                   </div>
                 )}
               </div>
-            ))}
-            {printTarget.conclusion && <p style={{ marginTop: 20, fontSize: 13, borderTop: "1px solid #eee", paddingTop: 12 }}><strong>Conclusion:</strong> {printTarget.conclusion}</p>}
-            <div style={{ marginTop: 30, borderTop: "1px solid #eee", paddingTop: 10, fontSize: 10, color: "#999" }}>
-              Generated by Labify on {new Date().toLocaleDateString()}
+            )}
+
+            {/* Steps */}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14, paddingLeft: 4 }}>Procedure Steps</div>
+
+              {printTarget.steps.map((step, idx) => (
+                <div
+                  key={step.id}
+                  style={{
+                    background: "#FFFFFF",
+                    borderRadius: 12,
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)",
+                    marginBottom: 16,
+                    overflow: "hidden",
+                    pageBreakInside: "avoid",
+                  }}
+                >
+                  {/* Step accent bar */}
+                  <div
+                    style={{
+                      height: 4,
+                      background: step.completed
+                        ? "#0D9488"
+                        : "#CFD8DC",
+                    }}
+                  />
+
+                  <div style={{ padding: "20px 28px" }}>
+                    {/* Step header */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          background: step.completed ? "#0D9488" : "#ECEFF1",
+                          color: step.completed ? "#fff" : "#78909C",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 13,
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          marginTop: 2,
+                        }}
+                      >
+                        {idx + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: "#263238", marginBottom: 2 }}>{step.title}</div>
+                        {step.durationMinutes && (
+                          <div style={{ fontSize: 9.5, color: "#78909C", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                            <span>⏱</span> {step.durationMinutes} min
+                          </div>
+                        )}
+                      </div>
+                      {step.completed ? (
+                        <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
+                      ) : (
+                        <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <p style={{ margin: "0 0 12px 46px", fontSize: 11, color: "#546E7A", lineHeight: 1.7 }}>{step.description}</p>
+
+                    {/* Safety note */}
+                    {step.safetyNotes && (
+                      <div
+                        style={{
+                          margin: "0 0 12px 46px",
+                          background: "#FFF3E0",
+                          borderLeft: "3px solid #FF9800",
+                          padding: "8px 14px",
+                          borderRadius: "0 8px 8px 0",
+                          fontSize: 10,
+                          color: "#E65100",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ⚠️ {step.safetyNotes}
+                      </div>
+                    )}
+
+                    {/* Expected result */}
+                    {step.expectedResult && (
+                      <div style={{ margin: "0 0 12px 46px" }}>
+                        <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 4 }}>Expected Result</div>
+                        <p style={{ margin: 0, fontSize: 11, color: "#455A64", fontWeight: 500 }}>{step.expectedResult}</p>
+                      </div>
+                    )}
+
+                    {/* Planned image */}
+                    {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 46, maxWidth: 360, maxHeight: 260, borderRadius: 8, border: "1px solid #ECEFF1", marginBottom: 12, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+
+                    {/* Execution / Deviation card */}
+                    {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                      <div
+                        style={{
+                          marginLeft: 46,
+                          background: "#FFF8E1",
+                          border: "1px solid #FFE082",
+                          borderRadius: 10,
+                          padding: "16px 20px",
+                        }}
+                      >
+                        <div style={{ fontSize: 9, color: "#F57F17", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>Execution &amp; Deviation Record</div>
+
+                        {step.actualResult && (
+                          <div style={{ marginBottom: 8 }}>
+                            <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
+                            <p style={{ margin: 0, fontSize: 11, color: "#5D4037" }}>{step.actualResult}</p>
+                          </div>
+                        )}
+
+                        {step.deviationNotes && (
+                          <div
+                            style={{
+                              marginBottom: 8,
+                              background: "#FFEBEE",
+                              borderLeft: "3px solid #EF5350",
+                              padding: "8px 12px",
+                              borderRadius: "0 6px 6px 0",
+                              fontSize: 10,
+                              color: "#C62828",
+                              fontWeight: 500,
+                            }}
+                          >
+                            🔴 Deviation: {step.deviationNotes}
+                          </div>
+                        )}
+
+                        {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 320, maxHeight: 240, borderRadius: 8, border: "1px solid #FFE082", marginTop: 6, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Conclusion */}
+            {printTarget.conclusion && (
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  borderRadius: 12,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)",
+                  padding: "24px 32px",
+                  marginBottom: 24,
+                  borderLeft: "4px solid #0D9488",
+                }}
+              >
+                <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Conclusion</div>
+                <p style={{ margin: 0, fontSize: 11.5, color: "#37474F", lineHeight: 1.7 }}>{printTarget.conclusion}</p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div
+              style={{
+                textAlign: "center",
+                paddingTop: 20,
+                borderTop: "1px solid #ECEFF1",
+                fontSize: 9,
+                color: "#90A4AE",
+                fontWeight: 500,
+                letterSpacing: "0.5px",
+              }}
+            >
+              Generated by Labify on {new Date().toLocaleDateString()} · {printTarget.steps.filter((s) => s.completed).length} of {printTarget.steps.length} steps completed
             </div>
           </div>
         </div>
