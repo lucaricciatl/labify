@@ -438,7 +438,7 @@ export function downloadExperimentExcel(
 }
 
 import type { ExperimentDesign, Experiment } from "./types";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableCell, TableRow, WidthType, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableCell, TableRow, WidthType, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";

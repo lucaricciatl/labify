@@ -13,8 +13,6 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  CheckCircle2,
-  Circle,
   FileType2,
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
