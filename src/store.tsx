@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef, useState } from "react";
-import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem } from "./types";
+import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem, ExperimentDesign } from "./types";
 import { db } from "./db";
 import { markDirty, onSyncChange, restoreFromCloud } from "./sync";
 import type { SyncStatus } from "./sync";
@@ -9,6 +9,7 @@ export interface AppState {
   materials: Material[];
   instruments: Instrument[];
   experiments: Experiment[];
+  experimentDesigns: ExperimentDesign[];
   orders: Order[];
   inventory: InventoryItem[];
   loaded: boolean;
@@ -191,6 +192,7 @@ const defaultState: AppState = {
   inventory: [
     { id: "IV1", materialCode: "M-003", supplierId: "S3", quantity: 2, unitPrice: 350.0, batch: "B2025-C", receivedDate: "2025-05-01" },
   ],
+  experimentDesigns: [],
   loaded: false,
 };
 
@@ -208,6 +210,9 @@ type Action =
   | { type: "ADD_EXPERIMENT"; payload: Experiment }
   | { type: "UPDATE_EXPERIMENT"; payload: Experiment }
   | { type: "DELETE_EXPERIMENT"; payload: string }
+  | { type: "ADD_EXPERIMENT_DESIGN"; payload: ExperimentDesign }
+  | { type: "UPDATE_EXPERIMENT_DESIGN"; payload: ExperimentDesign }
+  | { type: "DELETE_EXPERIMENT_DESIGN"; payload: string }
   | { type: "ADD_ORDER"; payload: Order }
   | { type: "UPDATE_ORDER"; payload: Order }
   | { type: "DELETE_ORDER"; payload: string }
@@ -243,6 +248,12 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, experiments: state.experiments.map((e) => e.id === action.payload.id ? action.payload : e) };
     case "DELETE_EXPERIMENT":
       return { ...state, experiments: state.experiments.filter((e) => e.id !== action.payload) };
+    case "ADD_EXPERIMENT_DESIGN":
+      return { ...state, experimentDesigns: [...state.experimentDesigns, action.payload] };
+    case "UPDATE_EXPERIMENT_DESIGN":
+      return { ...state, experimentDesigns: state.experimentDesigns.map((d) => d.id === action.payload.id ? action.payload : d) };
+    case "DELETE_EXPERIMENT_DESIGN":
+      return { ...state, experimentDesigns: state.experimentDesigns.filter((d) => d.id !== action.payload) };
     case "ADD_ORDER":
       return { ...state, orders: [...state.orders, action.payload] };
     case "UPDATE_ORDER":
@@ -282,7 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (state.loaded) {
       markDirty(state);
     }
-  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.orders.length, state.inventory.length, state.loaded]);
+  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.experimentDesigns.length, state.orders.length, state.inventory.length, state.loaded]);
 
   const load = async () => {
     try {
@@ -293,14 +304,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(cloud.instruments?.map((i: Instrument) => db.putInstrument(i)) ?? []);
         await Promise.all(cloud.experiments?.map((e: Experiment) => db.putExperiment(e)) ?? []);
         await Promise.all(cloud.orders?.map((o: Order) => db.putOrder(o)) ?? []);
-        await Promise.all(cloud.inventory?.map((iv: InventoryItem) => db.putInventoryItem(iv)) ?? []);
+        await Promise.all(cloud.experimentDesigns?.map((d: ExperimentDesign) => db.putExperimentDesign(d)) ?? []);
       }
 
-      const [suppliers, materials, instruments, experiments, orders, inventory] = await Promise.all([
+      const [suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory] = await Promise.all([
         db.getAllSuppliers(),
         db.getAllMaterials(),
         db.getAllInstruments(),
         db.getAllExperiments(),
+        db.getAllExperimentDesigns(),
         db.getAllOrders(),
         db.getAllInventory(),
       ]);
@@ -319,8 +331,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (suppliers.length || materials.length || instruments.length || experiments.length || orders.length || inventory.length) {
-        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, orders, inventory, loaded: true } });
+      if (suppliers.length || materials.length || instruments.length || experiments.length || experimentDesigns.length || orders.length || inventory.length) {
+        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory, loaded: true } });
       } else {
         await Promise.all(defaultState.suppliers.map((s) => db.putSupplier(s)));
         await Promise.all(defaultState.materials.map((m) => db.putMaterial(m)));
@@ -407,6 +419,15 @@ export function useInventoryActions() {
     add: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "ADD_INVENTORY", payload: i }); }, [dispatch]),
     update: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "UPDATE_INVENTORY", payload: i }); }, [dispatch]),
     remove: useCallback(async (id: string) => { await db.deleteInventoryItem(id); dispatch({ type: "DELETE_INVENTORY", payload: id }); }, [dispatch]),
+  };
+}
+
+export function useExperimentDesignActions() {
+  const { dispatch } = useStore();
+  return {
+    add: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "ADD_EXPERIMENT_DESIGN", payload: d }); }, [dispatch]),
+    update: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "UPDATE_EXPERIMENT_DESIGN", payload: d }); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteExperimentDesign(id); dispatch({ type: "DELETE_EXPERIMENT_DESIGN", payload: id }); }, [dispatch]),
   };
 }
 

@@ -77,6 +77,19 @@ const init = db.transaction(() => {
       verification_token TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS experiment_designs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      experiment_id TEXT,
+      objective TEXT,
+      hypothesis TEXT,
+      materials_json TEXT DEFAULT '[]',
+      instruments_json TEXT DEFAULT '[]',
+      steps_json TEXT DEFAULT '[]',
+      conclusion TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 });
 init();

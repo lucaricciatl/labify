@@ -1,7 +1,7 @@
-import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem } from "./types";
+import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem, ExperimentDesign } from "./types";
 
 const DB_NAME = "LabifyDB";
-const DB_VERSION = 11;
+const DB_VERSION = 13;
 const MIGRATION_BACKUP_PREFIX = "labify-migration-backup";
 
 const STORES = [
@@ -11,6 +11,7 @@ const STORES = [
   { name: "experiments", keyPath: "id" },
   { name: "orders", keyPath: "id" },
   { name: "inventory", keyPath: "id" },
+  { name: "experimentDesigns", keyPath: "id" },
 ] as const;
 
 function migrationBackupKey(version: number) {
@@ -137,6 +138,11 @@ export const db = {
   async putInventoryItem(i: InventoryItem): Promise<void> { await withStore("inventory", "readwrite", (store) => store.put(i)); },
   async deleteInventoryItem(id: string): Promise<void> { await withStore("inventory", "readwrite", (store) => store.delete(id)); },
 
+  // Experiment Designs
+  async getAllExperimentDesigns(): Promise<ExperimentDesign[]> { return withStore("experimentDesigns", "readonly", (s) => s.getAll()); },
+  async putExperimentDesign(d: ExperimentDesign): Promise<void> { await withStore("experimentDesigns", "readwrite", (store) => store.put(d)); },
+  async deleteExperimentDesign(id: string): Promise<void> { await withStore("experimentDesigns", "readwrite", (store) => store.delete(id)); },
+
   async clearAll(): Promise<void> {
     await withStore("suppliers", "readwrite", (store) => store.clear());
     await withStore("materials", "readwrite", (store) => store.clear());
@@ -144,6 +150,7 @@ export const db = {
     await withStore("experiments", "readwrite", (store) => store.clear());
     await withStore("orders", "readwrite", (store) => store.clear());
     await withStore("inventory", "readwrite", (store) => store.clear());
+    await withStore("experimentDesigns", "readwrite", (store) => store.clear());
   },
 
   async exportAll(): Promise<Record<string, unknown[]>> {

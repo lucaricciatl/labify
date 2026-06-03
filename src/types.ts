@@ -1,3 +1,32 @@
+export interface DesignStep {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  durationMinutes?: number;
+  safetyNotes?: string;
+  expectedResult?: string;
+  image?: string;
+  actualResult?: string;
+  deviationNotes?: string;
+  actualImage?: string;
+  completed: boolean;
+}
+
+export interface ExperimentDesign {
+  id: string;
+  name: string;
+  experimentId?: string;
+  objective?: string;
+  hypothesis?: string;
+  materials: string[];
+  instruments: string[];
+  steps: DesignStep[];
+  conclusion?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface DocumentLink {
   id: string;
   label: string;

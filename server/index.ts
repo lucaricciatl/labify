@@ -263,6 +263,8 @@ crudRoutes("experiments", "experiments", "id", ["id", "name", "starting_date", "
 crudRoutes("orders", "orders", "id", ["id", "material_code", "supplier_id", "quantity", "unit_price", "batch", "ordered_date"]);
 crudRoutes("inventory", "inventory", "id", ["id", "material_code", "supplier_id", "quantity", "unit_price", "batch", "received_date"]);
 
+crudRoutes("experiment_designs", "experiment_designs", "id", ["id", "name", "experiment_id", "objective", "hypothesis", "materials_json", "instruments_json", "steps_json", "conclusion"], ["materials_json", "instruments_json", "steps_json"]);
+
 // ─── Full backup / restore ───────────────────────────────────────
 app.get("/api/backup", (_req, res) => {
   const backup = {
@@ -275,6 +277,12 @@ app.get("/api/backup", (_req, res) => {
       instruments: parseJson(r.instruments_json as string),
       docLinks: parseJson(r.doc_links_json as string),
       attachments: parseJson(r.attachments_json as string),
+    })),
+    experimentDesigns: (db.prepare("SELECT * FROM experiment_designs").all() as Record<string, unknown>[]).map((r) => ({
+      ...r,
+      materials: parseJson(r.materials_json as string),
+      instruments: parseJson(r.instruments_json as string),
+      steps: parseJson(r.steps_json as string),
     })),
     orders: db.prepare("SELECT * FROM orders").all(),
     inventory: db.prepare("SELECT * FROM inventory").all(),
@@ -290,6 +298,7 @@ app.post("/api/restore", (req, res) => {
     const insertMaterials = db.prepare("INSERT OR REPLACE INTO materials (code, name, supplier_id, link, price, consumable, unit, image, attachments_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
     const insertInstruments = db.prepare("INSERT OR REPLACE INTO instruments (code, name, supplier_id, link, price, quantity, image, attachments_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     const insertExperiments = db.prepare("INSERT OR REPLACE INTO experiments (id, name, starting_date, ending_date, materials_json, instruments_json, doc_links_json, attachments_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    const insertExperimentDesigns = db.prepare("INSERT OR REPLACE INTO experiment_designs (id, name, experiment_id, objective, hypothesis, materials_json, instruments_json, steps_json, conclusion, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     const insertOrders = db.prepare("INSERT OR REPLACE INTO orders (id, material_code, supplier_id, quantity, unit_price, batch, ordered_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
     const insertInventory = db.prepare("INSERT OR REPLACE INTO inventory (id, material_code, supplier_id, quantity, unit_price, batch, received_date) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
@@ -298,6 +307,12 @@ app.post("/api/restore", (req, res) => {
       for (const m of data.materials || []) insertMaterials.run(m.code, m.name, m.supplier_id ?? m.supplierId, m.link, m.price, m.consumable ? 1 : 0, m.unit, m.image ?? null, json(m.attachments));
       for (const i of data.instruments || []) insertInstruments.run(i.code, i.name, i.supplier_id ?? i.supplierId, i.link, i.price, i.quantity, i.image ?? null, json(i.attachments));
       for (const e of data.experiments || []) insertExperiments.run(e.id, e.name, e.starting_date ?? e.startingDate, e.ending_date ?? e.endingDate, json(e.materials), json(e.instruments), json(e.docLinks ?? e.doc_links), json(e.attachments));
+      for (const d of data.experimentDesigns || data.experiment_designs || []) insertExperimentDesigns.run(
+        d.id, d.name, d.experiment_id ?? d.experimentId ?? null,
+        d.objective ?? null, d.hypothesis ?? null,
+        json(d.materials), json(d.instruments), json(d.steps),
+        d.conclusion ?? null, d.created_at ?? d.createdAt ?? null, d.updated_at ?? d.updatedAt ?? null
+      );
       for (const o of data.orders || []) insertOrders.run(o.id, o.material_code ?? o.materialCode, o.supplier_id ?? o.supplierId, o.quantity, o.unit_price ?? o.unitPrice, o.batch, o.ordered_date ?? o.orderedDate);
       for (const inv of data.inventory || []) insertInventory.run(inv.id, inv.material_code ?? inv.materialCode, inv.supplier_id ?? inv.supplierId, inv.quantity, inv.unit_price ?? inv.unitPrice, inv.batch, inv.received_date ?? inv.receivedDate);
     });
