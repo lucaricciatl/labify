@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy, X, Image as ImageIcon } from "lucide-react";
 import { useStore, useExperimentActions, generateExperimentId, useOrderActions } from "../store";
 import type { Experiment, ExperimentMaterial, ExperimentInstrument, DocumentLink, ExperimentStep } from "../types";
 import { generateId } from "../utils";
