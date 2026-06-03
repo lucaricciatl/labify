@@ -482,12 +482,12 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
       rows: [
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ text: "#", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Step", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Description", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Expected", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Actual", bold: true })] }),
-            new TableCell({ children: [new Paragraph({ text: "Deviation", bold: true })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "#", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Step", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Description", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Expected", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Actual", bold: true })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Deviation", bold: true })] })] }),
           ],
         }),
         ...rows,
