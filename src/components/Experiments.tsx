@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy, X, Image as ImageIcon } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy, X, Image as ImageIcon, Eye, FileDown, AlertTriangle } from "lucide-react";
 import { useStore, useExperimentActions, generateExperimentId, useOrderActions } from "../store";
 import type { Experiment, ExperimentMaterial, ExperimentInstrument, DocumentLink, ExperimentStep } from "../types";
 import { generateId } from "../utils";
 import Modal from "./Modal";
-import { downloadExcel, downloadExperimentExcel } from "../export";
+import { downloadExcel, downloadExperimentPDF } from "../export";
 import { AttachmentList, AttachmentUploader, useAttachmentHelpers } from "./Attachments";
 
 function empty(): Experiment {
@@ -67,6 +67,10 @@ export default function Experiments() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [quickOrder, setQuickOrder] = useState<{ materialCode: string; qty: number; batch: string } | null>(null);
+  const [previewModal, setPreviewModal] = useState(false);
+  const [previewExp, setPreviewExp] = useState<Experiment | null>(null);
+  const [printTarget, setPrintTarget] = useState<Experiment | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
 
   const {
     fileRef: docRef,
@@ -260,16 +264,17 @@ export default function Experiments() {
     );
   };
 
-  const exportSingle = (exp: Experiment) => {
-    const matEnriched = state.materials.map((m) => {
-      const s = state.suppliers.find((x) => x.id === m.supplierId);
-      return { code: m.code, name: m.name, supplierName: s?.name ?? m.supplierId, price: m.price, unit: m.unit, link: m.link, consumable: m.consumable, image: m.image, attachments: m.attachments };
-    });
-    const instEnriched = state.instruments.map((inst) => {
-      const s = state.suppliers.find((x) => x.id === inst.supplierId);
-      return { code: inst.code, name: inst.name, supplierName: s?.name ?? inst.supplierId, price: inst.price };
-    });
-    downloadExperimentExcel(exp, matEnriched, instEnriched);
+  const openPreview = (exp: Experiment) => {
+    setPreviewExp(exp);
+    setPreviewModal(true);
+  };
+
+  const exportPdf = async (exp: Experiment) => {
+    setPrintTarget(exp);
+    setTimeout(async () => {
+      await downloadExperimentPDF(exp, printRef);
+      setPrintTarget(null);
+    }, 100);
   };
 
   const q = search.toLowerCase();
@@ -343,7 +348,8 @@ export default function Experiments() {
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(exp)}><Pencil size={14} /></button>
                       <button className="icon-btn" title="Duplicate experiment" onClick={() => duplicate(exp)}><Copy size={14} /></button>
-                      <button className="icon-btn" title="Export" onClick={() => exportSingle(exp)}><FileSpreadsheet size={14} /></button>
+                      <button className="icon-btn" title="Preview" onClick={() => openPreview(exp)}><Eye size={14} /></button>
+                      <button className="icon-btn" title="Export PDF" onClick={() => exportPdf(exp)}><FileDown size={14} /></button>
                       <button className="icon-btn danger" title="Delete" onClick={() => del(exp.id)}><Trash2 size={14} /></button>
                     </td>
                   </tr>
@@ -699,6 +705,245 @@ export default function Experiments() {
           setActiveStepImage(null);
         }
       }} />
+
+      {/* Hidden print target for PDF — Material Design + Montserrat */}
+      {printTarget && (
+        <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
+          <div ref={printRef} style={{ fontFamily: "'Montserrat', system-ui, sans-serif", background: "#F5F5F5", padding: 40, width: 794, color: "#263238" }}>
+            {/* Header */}
+            <div style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "24px 32px", marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 6 }}>Experiment Execution Report</div>
+              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#1a1a1a", letterSpacing: "-0.5px" }}>{printTarget.name}</h1>
+              <div style={{ marginTop: 12, display: "flex", gap: 24, flexWrap: "wrap" }}>
+                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>ID</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.id}</div></div>
+                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Start</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.startingDate || "—"}</div></div>
+                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>End</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.endingDate || "—"}</div></div>
+                {printTarget.designId && (
+                  <div>
+                    <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Protocol</span>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{state.experimentDesigns.find((d) => d.id === printTarget.designId)?.name || printTarget.designId}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Materials & Instruments */}
+            {(printTarget.materials.length > 0 || printTarget.instruments.length > 0) && (
+              <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+                {printTarget.materials.length > 0 && (
+                  <div style={{ flex: 1, minWidth: 280, background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "20px 24px" }}>
+                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Materials Used</div>
+                    {printTarget.materials.map((em, idx) => {
+                      const mat = state.materials.find((m) => m.code === em.materialCode);
+                      return (
+                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, padding: "6px 0", borderBottom: idx < printTarget.materials.length - 1 ? "1px solid #ECEFF1" : "none" }}>
+                          <span>{mat?.name || em.materialCode}</span>
+                          <span style={{ color: "#78909C" }}>{em.quantityNeeded} {em.unit || mat?.unit || ""}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {printTarget.instruments.length > 0 && (
+                  <div style={{ flex: 1, minWidth: 280, background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "20px 24px" }}>
+                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Instruments Used</div>
+                    {printTarget.instruments.map((ei, idx) => {
+                      const inst = state.instruments.find((i) => i.code === ei.instrumentCode);
+                      return (
+                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, padding: "6px 0", borderBottom: idx < printTarget.instruments.length - 1 ? "1px solid #ECEFF1" : "none" }}>
+                          <span>{inst?.name || ei.instrumentCode}</span>
+                          <span style={{ color: "#78909C" }}>Qty: {ei.quantityNeeded}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Steps */}
+            {printTarget.steps.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14 }}>Procedure Steps — Execution Record</div>
+                {printTarget.steps.map((step, idx) => (
+                  <div key={step.id} style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", marginBottom: 16, overflow: "hidden", pageBreakInside: "avoid" }}>
+                    <div style={{ height: 4, background: step.completed ? "#0D9488" : "#CFD8DC" }} />
+                    <div style={{ padding: "20px 28px" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: step.completed ? "#0D9488" : "#ECEFF1", color: step.completed ? "#fff" : "#78909C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{idx + 1}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 600, color: "#263238", marginBottom: 2 }}>{step.title}</div>
+                          {step.durationMinutes && <div style={{ fontSize: 9.5, color: "#78909C", fontWeight: 500 }}>⏱ {step.durationMinutes} min</div>}
+                        </div>
+                        {step.completed ? (
+                          <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
+                        ) : (
+                          <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
+                        )}
+                      </div>
+                      <p style={{ margin: "0 0 12px 46px", fontSize: 11, color: "#546E7A", lineHeight: 1.7 }}>{step.description}</p>
+                      {step.safetyNotes && (
+                        <div style={{ margin: "0 0 12px 46px", background: "#FFF3E0", borderLeft: "3px solid #FF9800", padding: "8px 14px", borderRadius: "0 8px 8px 0", fontSize: 10, color: "#E65100", fontWeight: 500 }}>⚠️ {step.safetyNotes}</div>
+                      )}
+                      {step.expectedResult && (
+                        <div style={{ margin: "0 0 12px 46px" }}>
+                          <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 4 }}>Expected Result</div>
+                          <p style={{ margin: 0, fontSize: 11, color: "#455A64", fontWeight: 500 }}>{step.expectedResult}</p>
+                        </div>
+                      )}
+                      {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 46, maxWidth: 320, maxHeight: 220, borderRadius: 8, border: "1px solid #ECEFF1", marginBottom: 12, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                        <div style={{ marginLeft: 46, background: "#FFFFFF", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
+                          <div style={{ padding: "10px 16px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>📝 Execution &amp; Deviation Record</div>
+                          <div style={{ padding: "14px 16px" }}>
+                            {step.actualResult && (
+                              <div style={{ marginBottom: 8 }}>
+                                <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
+                                <p style={{ margin: 0, fontSize: 11, color: "#5D4037" }}>{step.actualResult}</p>
+                              </div>
+                            )}
+                            {step.deviationNotes && (
+                              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#C62828", fontSize: 10, fontWeight: 600, marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderLeft: "3px solid #EF5350", borderRadius: "0 6px 6px 0" }}>
+                                <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+                                <span>{step.deviationNotes}</span>
+                              </div>
+                            )}
+                            {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 280, maxHeight: 200, borderRadius: 8, border: "1px solid #E0E0E0", marginTop: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Conclusion */}
+            {printTarget.conclusion && (
+              <div style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "24px 32px", marginBottom: 24, borderLeft: "4px solid #0D9488" }}>
+                <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Conclusion</div>
+                <p style={{ margin: 0, fontSize: 11.5, color: "#37474F", lineHeight: 1.7 }}>{printTarget.conclusion}</p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{ textAlign: "center", paddingTop: 20, borderTop: "1px solid #ECEFF1", fontSize: 9, color: "#90A4AE", fontWeight: 500, letterSpacing: "0.5px" }}>
+              Generated by Labify on {new Date().toLocaleDateString()} · {printTarget.steps.filter((s) => s.completed).length} of {printTarget.steps.length} steps completed
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      <Modal open={previewModal} onClose={() => setPreviewModal(false)} title="Experiment Report Preview">
+        {previewExp && (
+          <div style={{ maxHeight: "70vh", overflowY: "auto", padding: "8px 4px" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 12, padding: "32px 40px", border: "1px solid #E0E0E0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+              <div style={{ borderBottom: "2px solid #0D9488", paddingBottom: 16, marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 6 }}>Experiment Execution Report</div>
+                <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#1a1a1a", fontFamily: "'Montserrat', system-ui, sans-serif" }}>{previewExp.name}</h1>
+                <div style={{ marginTop: 10, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>ID</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{previewExp.id}</div></div>
+                  <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>Start</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{previewExp.startingDate || "—"}</div></div>
+                  <div><span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>End</span><div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{previewExp.endingDate || "—"}</div></div>
+                  {previewExp.designId && (
+                    <div>
+                      <span style={{ fontSize: 10, color: "#78909C", fontWeight: 600 }}>Protocol</span>
+                      <div style={{ fontSize: 11, color: "#455A64", marginTop: 2 }}>{state.experimentDesigns.find((d) => d.id === previewExp.designId)?.name || previewExp.designId}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(previewExp.materials.length > 0 || previewExp.instruments.length > 0) && (
+                <div style={{ marginBottom: 20 }}>
+                  {previewExp.materials.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Materials Used</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {previewExp.materials.map((em) => {
+                          const mat = state.materials.find((m) => m.code === em.materialCode);
+                          return (
+                            <span key={em.materialCode} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                              {mat?.name || em.materialCode} · {em.quantityNeeded} {em.unit || mat?.unit || ""}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {previewExp.instruments.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>Instruments Used</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {previewExp.instruments.map((ei) => {
+                          const inst = state.instruments.find((i) => i.code === ei.instrumentCode);
+                          return (
+                            <span key={ei.instrumentCode} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                              {inst?.name || ei.instrumentCode} · Qty: {ei.quantityNeeded}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ fontSize: 10, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14 }}>Procedure Steps — Execution Record</div>
+              <div className="step-preview-list">
+                {previewExp.steps.map((step, idx) => (
+                  <div className={`step-preview ${step.completed ? "step-completed" : ""}`} key={step.id}>
+                    <div className="step-preview-header">
+                      <span className="step-number">{idx + 1}</span>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
+                        {step.durationMinutes && <span className="step-meta">⏱ {step.durationMinutes} min</span>}
+                      </div>
+                      <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>{step.completed ? "Completed" : "Pending"}</span>
+                    </div>
+                    <div className="step-preview-body">
+                      <p className="step-desc">{step.description}</p>
+                      {step.safetyNotes && (
+                        <div className="step-safety"><AlertTriangle size={12} /> {step.safetyNotes}</div>
+                      )}
+                      {step.expectedResult && (
+                        <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
+                      )}
+                      {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                        <div className="step-actual-box">
+                          <div className="actual-header">📝 Execution &amp; Deviation Record</div>
+                          <div className="actual-body">
+                            {step.actualResult && <p>{step.actualResult}</p>}
+                            {step.deviationNotes && (
+                              <div className="step-deviation">
+                                <span className="deviation-icon">⚠️</span>
+                                <span>{step.deviationNotes}</span>
+                              </div>
+                            )}
+                            {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {previewExp.conclusion && (
+                <div className="conclusion-card" style={{ marginTop: 20 }}>
+                  <strong>Conclusion:</strong> {previewExp.conclusion}
+                </div>
+              )}
+
+              <div style={{ textAlign: "center", marginTop: 24, paddingTop: 16, borderTop: "1px solid #ECEFF1", fontSize: 10, color: "#90A4AE" }}>
+                Generated by Labify · {previewExp.steps.filter((s) => s.completed).length}/{previewExp.steps.length} steps completed
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -437,6 +437,87 @@ export function downloadExperimentExcel(
   XLSX.writeFile(wb, `${exp.id}-experiment.xlsx`);
 }
 
+export function downloadDesignBOM(
+  design: ExperimentDesign,
+  allMaterials: { code: string; name: string; supplierName: string; price: number; unit: string }[],
+  allInstruments: { code: string; name: string; supplierName: string; price: number }[]
+) {
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Materials ───────────────────────────────────────
+  const matRows = design.materials.map((code, idx) => {
+    const mat = allMaterials.find((m) => m.code === code);
+    return {
+      "#": idx + 1,
+      "Material ID": code,
+      Name: mat?.name ?? "-",
+      Supplier: mat?.supplierName ?? "-",
+      Unit: mat?.unit ?? "-",
+      "Unit Price": mat?.price ?? 0,
+      "Qty Needed": 1,
+      "Line Cost": mat?.price ?? 0,
+    };
+  });
+  const ws1 = XLSX.utils.json_to_sheet(matRows);
+  if (ws1["!ref"]) {
+    const decoded = XLSX.utils.decode_range(ws1["!ref"]);
+    applyHeaderStyle(ws1, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
+    applyCellBorders(ws1, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
+    for (let R = 1; R <= decoded.e.r; ++R) {
+      for (const col of [5, 6, 7]) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: col });
+        if (ws1[addr]) ws1[addr].s = { ...ws1[addr].s, ...CURRENCY_STYLE };
+      }
+    }
+    for (let R = 0; R <= decoded.e.r; ++R) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: 0 });
+      if (ws1[addr]) ws1[addr].s = { ...ws1[addr].s, ...CENTER };
+    }
+    setColWidths(ws1, [
+      { wch: 4 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+    ]);
+    setFreeze(ws1, 1, 0);
+  }
+  XLSX.utils.book_append_sheet(wb, ws1, "Materials");
+
+  // ── Sheet 2: Instruments ─────────────────────────────────────
+  const instRows = design.instruments.map((code, idx) => {
+    const inst = allInstruments.find((i) => i.code === code);
+    return {
+      "#": idx + 1,
+      "Instrument ID": code,
+      Name: inst?.name ?? "-",
+      Supplier: inst?.supplierName ?? "-",
+      "Unit Price": inst?.price ?? 0,
+      "Qty Needed": 1,
+      "Line Cost": inst?.price ?? 0,
+    };
+  });
+  const ws2 = XLSX.utils.json_to_sheet(instRows);
+  if (ws2["!ref"]) {
+    const decoded = XLSX.utils.decode_range(ws2["!ref"]);
+    applyHeaderStyle(ws2, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
+    applyCellBorders(ws2, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
+    for (let R = 1; R <= decoded.e.r; ++R) {
+      for (const col of [4, 5, 6]) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: col });
+        if (ws2[addr]) ws2[addr].s = { ...ws2[addr].s, ...CURRENCY_STYLE };
+      }
+    }
+    for (let R = 0; R <= decoded.e.r; ++R) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: 0 });
+      if (ws2[addr]) ws2[addr].s = { ...ws2[addr].s, ...CENTER };
+    }
+    setColWidths(ws2, [
+      { wch: 4 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+    ]);
+    setFreeze(ws2, 1, 0);
+  }
+  XLSX.utils.book_append_sheet(wb, ws2, "Instruments");
+
+  XLSX.writeFile(wb, `${design.id}_${design.name.replace(/\s+/g, "_")}_BOM.xlsx`);
+}
+
 import type { ExperimentDesign, Experiment } from "./types";
 import { Document, Packer, Paragraph, TextRun, Table, TableCell, TableRow, WidthType, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
@@ -572,7 +653,7 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, _ex
   saveAs(blob, `${design.id}_${design.name.replace(/\s+/g, "_")}.docx`);
 }
 
-export async function downloadExperimentDesignPDF(design: ExperimentDesign, printRef: React.RefObject<HTMLDivElement | null>) {
+export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | null>, filename: string) {
   if (!printRef.current) return;
   const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
   const imgData = canvas.toDataURL("image/png");
@@ -590,5 +671,15 @@ export async function downloadExperimentDesignPDF(design: ExperimentDesign, prin
     pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
   }
-  pdf.save(`${design.id}_${design.name.replace(/\s+/g, "_")}.pdf`);
+  pdf.save(filename);
+}
+
+export async function downloadExperimentDesignPDF(design: ExperimentDesign, printRef: React.RefObject<HTMLDivElement | null>) {
+  const filename = `${design.id}_${design.name.replace(/\s+/g, "_")}.pdf`;
+  await downloadPDF(printRef, filename);
+}
+
+export async function downloadExperimentPDF(exp: Experiment, printRef: React.RefObject<HTMLDivElement | null>) {
+  const filename = `${exp.id}_${exp.name.replace(/\s+/g, "_")}.pdf`;
+  await downloadPDF(printRef, filename);
 }

@@ -15,12 +15,13 @@ import {
   X,
   FileType2,
   Eye,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
 import type { ExperimentDesign, DesignStep } from "../types";
 import { generateId } from "../utils";
 import Modal from "./Modal";
-import { downloadExperimentDesignWord, downloadExperimentDesignPDF } from "../export";
+import { downloadExperimentDesignWord, downloadExperimentDesignPDF, downloadDesignBOM } from "../export";
 
 function emptyStep(order: number): DesignStep {
   return {
@@ -190,6 +191,18 @@ export default function ExperimentDesigns() {
     setPrintTarget(null);
   };
 
+  const exportBom = (d: ExperimentDesign) => {
+    const matEnriched = state.materials.map((m) => {
+      const s = state.suppliers.find((x) => x.id === m.supplierId);
+      return { code: m.code, name: m.name, supplierName: s?.name ?? m.supplierId, price: m.price, unit: m.unit };
+    });
+    const instEnriched = state.instruments.map((inst) => {
+      const s = state.suppliers.find((x) => x.id === inst.supplierId);
+      return { code: inst.code, name: inst.name, supplierName: s?.name ?? inst.supplierId, price: inst.price };
+    });
+    downloadDesignBOM(d, matEnriched, instEnriched);
+  };
+
   const q = search.toLowerCase();
   const filtered = state.experimentDesigns.filter((d) => {
     const hay = [d.id, d.name, d.objective || "", d.hypothesis || "", ...d.steps.map((s) => s.title + " " + s.description)].join(" ").toLowerCase();
@@ -241,6 +254,7 @@ export default function ExperimentDesigns() {
                       <button className="icon-btn" title="Preview" onClick={() => openPreview(d)}><Eye size={14} /></button>
                       <button className="icon-btn" title="Export Word" onClick={() => exportWord(d)}><FileType2 size={14} /></button>
                       <button className="icon-btn" title="Export PDF" onClick={() => exportPdf(d)}><FileDown size={14} /></button>
+                      <button className="icon-btn" title="Export BOM" onClick={() => exportBom(d)}><FileSpreadsheet size={14} /></button>
                       <button className="icon-btn danger" title="Delete" onClick={() => del(d.id)}><Trash2 size={14} /></button>
                     </td>
                   </tr>
