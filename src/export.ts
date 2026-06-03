@@ -513,7 +513,7 @@ export function downloadDesignBOM(
     ...matRows,
   ];
   const matTotal = matRows.reduce((sum, r) => sum + (r["Line Cost"] as number), 0);
-  ws1Data.push({ "#": "", "Material ID": "", Name: "", Supplier: "", Unit: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": matTotal });
+  ws1Data.push({ "#": "", "Material ID": "", Name: "", Supplier: "", Unit: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": matTotal } as any);
 
   const ws1 = XLSX.utils.json_to_sheet(ws1Data);
   if (ws1["!ref"]) {
@@ -522,7 +522,6 @@ export function downloadDesignBOM(
     const lastC = decoded.e.c;
 
     // Title row (row 0)
-    const titleRange = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: lastC } });
     for (let C = 0; C <= lastC; ++C) {
       const addr = XLSX.utils.encode_cell({ r: 0, c: C });
       if (!ws1[addr]) continue;
@@ -590,7 +589,7 @@ export function downloadDesignBOM(
     ...instRows,
   ];
   const instTotal = instRows.reduce((sum, r) => sum + (r["Line Cost"] as number), 0);
-  ws2Data.push({ "#": "", "Instrument ID": "", Name: "", Supplier: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": instTotal });
+  ws2Data.push({ "#": "", "Instrument ID": "", Name: "", Supplier: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": instTotal } as any);
 
   const ws2 = XLSX.utils.json_to_sheet(ws2Data);
   if (ws2["!ref"]) {
