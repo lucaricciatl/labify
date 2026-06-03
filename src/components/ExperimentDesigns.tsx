@@ -19,12 +19,13 @@ import {
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
 import type { ExperimentDesign, DesignStep } from "../types";
+import { generateId } from "../utils";
 import Modal from "./Modal";
 import { downloadExperimentDesignWord, downloadExperimentDesignPDF } from "../export";
 
 function emptyStep(order: number): DesignStep {
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     order,
     title: "",
     description: "",
@@ -41,7 +42,7 @@ function emptyStep(order: number): DesignStep {
 
 function emptyDesign(): ExperimentDesign {
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     name: "",
     experimentId: "",
     objective: "",
@@ -84,9 +85,14 @@ export default function ExperimentDesigns() {
   const [activeImageStep, setActiveImageStep] = useState<{ idx: number; type: "planned" | "actual" } | null>(null);
 
   const openAdd = () => {
-    const nextId = generateDesignId(state.experimentDesigns);
-    setEditing({ ...emptyDesign(), id: nextId });
-    setModal(true);
+    try {
+      const nextId = generateDesignId(state.experimentDesigns);
+      setEditing({ ...emptyDesign(), id: nextId });
+      setModal(true);
+    } catch (err) {
+      console.error("[ExperimentDesigns] openAdd failed:", err);
+      alert("Failed to create new design. See console for details.");
+    }
   };
 
   const openEdit = (d: ExperimentDesign) => {
@@ -106,11 +112,19 @@ export default function ExperimentDesigns() {
       updatedAt: new Date().toISOString().slice(0, 10),
       steps: editing.steps.map((s, i) => ({ ...s, order: i })),
     };
-    if (!d.name.trim()) return;
-    const exists = state.experimentDesigns.find((x) => x.id === d.id);
-    if (exists) await actions.update(d);
-    else await actions.add(d);
-    setModal(false);
+    if (!d.name.trim()) {
+      alert("Please enter a name for the design.");
+      return;
+    }
+    try {
+      const exists = state.experimentDesigns.find((x) => x.id === d.id);
+      if (exists) await actions.update(d);
+      else await actions.add(d);
+      setModal(false);
+    } catch (err) {
+      console.error("[ExperimentDesigns] save failed:", err);
+      alert("Failed to save design. See console for details.");
+    }
   };
 
   const del = async (id: string) => {
