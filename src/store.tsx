@@ -78,6 +78,8 @@ const defaultState: AppState = {
     {
       id: "EXP-20250530-01",
       name: "Cell Culture Protocol",
+      designId: "",
+      steps: [],
       materials: [
         { materialCode: "M-001", quantityNeeded: 2, unit: "mL" },
         { materialCode: "M-002", quantityNeeded: 10, unit: "unit" },
@@ -95,6 +97,8 @@ const defaultState: AppState = {
     {
       id: "EXP-20250530-02",
       name: "Protein Extraction",
+      designId: "",
+      steps: [],
       materials: [{ materialCode: "M-001", quantityNeeded: 5, unit: "mL" }],
       instruments: [
         { instrumentCode: "I-002", quantityNeeded: 1 },
@@ -108,6 +112,8 @@ const defaultState: AppState = {
     {
       id: "EXP-20250630-01",
       name: "Ti3AlC2 MAX Phase Synthesis",
+      designId: "",
+      steps: [],
       materials: [
         { materialCode: "M-004", quantityNeeded: 2, unit: "g" },
         { materialCode: "M-005", quantityNeeded: 1, unit: "g" },
@@ -127,6 +133,8 @@ const defaultState: AppState = {
     {
       id: "EXP-20250630-02",
       name: "Ti3C2Tx MXene Etching & Delamination",
+      designId: "",
+      steps: [],
       materials: [
         { materialCode: "M-022", quantityNeeded: 1, unit: "g" },
         { materialCode: "258148", quantityNeeded: 20, unit: "mL" },
@@ -148,6 +156,8 @@ const defaultState: AppState = {
     {
       id: "EXP-20250630-03",
       name: "MXene-ECRAM Synaptic Memory Device Fabrication",
+      designId: "",
+      steps: [],
       materials: [
         { materialCode: "M-021", quantityNeeded: 50, unit: "mL" },
         { materialCode: "M-010", quantityNeeded: 0.5, unit: "g" },

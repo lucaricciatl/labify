@@ -32,10 +32,6 @@ function emptyStep(order: number): DesignStep {
     safetyNotes: "",
     expectedResult: "",
     image: "",
-    actualResult: "",
-    deviationNotes: "",
-    actualImage: "",
-    completed: false,
   };
 }
 
@@ -43,7 +39,6 @@ function emptyDesign(): ExperimentDesign {
   return {
     id: generateId(),
     name: "",
-    experimentId: "",
     objective: "",
     hypothesis: "",
     materials: [],
@@ -221,7 +216,6 @@ export default function ExperimentDesigns() {
               <th></th>
               <th>ID</th>
               <th>Name</th>
-              <th>Experiment</th>
               <th>Steps</th>
               <th>Updated</th>
               <th style={{ width: 160 }}></th>
@@ -230,8 +224,6 @@ export default function ExperimentDesigns() {
           <tbody>
             {filtered.map((d) => {
               const isOpen = expanded.has(d.id);
-              const linkedExp = state.experiments.find((e) => e.id === d.experimentId);
-              const completedSteps = d.steps.filter((s) => s.completed).length;
               return (
                 <React.Fragment key={d.id}>
                   <tr className="exp-row">
@@ -242,8 +234,7 @@ export default function ExperimentDesigns() {
                     </td>
                     <td><span className="mono-id">{d.id}</span></td>
                     <td>{d.name}</td>
-                    <td>{linkedExp?.name || "—"}</td>
-                    <td>{completedSteps}/{d.steps.length} done</td>
+                    <td>{d.steps.length} step(s)</td>
                     <td>{d.updatedAt || d.createdAt}</td>
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(d)}><Pencil size={14} /></button>
@@ -255,7 +246,7 @@ export default function ExperimentDesigns() {
                   </tr>
                   {isOpen && (
                     <tr className="exp-detail">
-                      <td colSpan={7}>
+                      <td colSpan={6}>
                         <div className="design-preview-container">
                           {d.objective && <p style={{ marginBottom: 8, color: "#37474F", fontSize: 13 }}><strong style={{ color: "#0D9488" }}>Objective:</strong> {d.objective}</p>}
                           {d.hypothesis && <p style={{ marginBottom: 12, color: "#37474F", fontSize: 13 }}><strong style={{ color: "#0D9488" }}>Hypothesis:</strong> {d.hypothesis}</p>}
@@ -263,16 +254,13 @@ export default function ExperimentDesigns() {
                             <strong style={{ color: "#0D9488", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>Steps</strong>
                             <div className="step-preview-list">
                               {d.steps.map((step, idx) => (
-                                <div className={`step-preview ${step.completed ? "step-completed" : ""}`} key={step.id}>
+                                <div className="step-preview" key={step.id}>
                                   <div className="step-preview-header">
                                     <span className="step-number">{idx + 1}</span>
                                     <div style={{ flex: 1 }}>
                                       <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
                                       {step.durationMinutes && <span className="step-meta"><Clock size={12} /> {step.durationMinutes} min</span>}
                                     </div>
-                                    <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>
-                                      {step.completed ? "Completed" : "Pending"}
-                                    </span>
                                   </div>
                                   <div className="step-preview-body">
                                     <p className="step-desc">{step.description}</p>
@@ -283,14 +271,6 @@ export default function ExperimentDesigns() {
                                       <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                                     )}
                                     {step.image && <img src={step.image} alt="planned" className="step-image" />}
-                                    {(step.actualResult || step.deviationNotes || step.actualImage) && (
-                                      <div className="step-actual-box">
-                                        <strong>Execution &amp; Deviation Record</strong>
-                                        {step.actualResult && <p>{step.actualResult}</p>}
-                                        {step.deviationNotes && <div className="step-deviation">🔴 {step.deviationNotes}</div>}
-                                        {step.actualImage && <img src={step.actualImage} alt="actual" className="step-image" />}
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -309,7 +289,7 @@ export default function ExperimentDesigns() {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="empty">No experiment designs match your search.</td></tr>
+              <tr><td colSpan={6} className="empty">No experiment designs match your search.</td></tr>
             )}
           </tbody>
         </table>
@@ -319,15 +299,6 @@ export default function ExperimentDesigns() {
         <div className="form">
           <div className="field"><label>Design ID</label><input value={editing?.id || ""} readOnly className="mono-input" /></div>
           <div className="field"><label>Name</label><input value={editing?.name || ""} onChange={(e) => setEditing((p) => p ? { ...p, name: e.target.value } : p)} placeholder="e.g. Ti3C2Tx MXene Device Fabrication Protocol" /></div>
-          <div className="field">
-            <label>Linked Experiment (optional)</label>
-            <select value={editing?.experimentId || ""} onChange={(e) => setEditing((p) => p ? { ...p, experimentId: e.target.value } : p)}>
-              <option value="">— None —</option>
-              {state.experiments.map((e) => (
-                <option key={e.id} value={e.id}>{e.id} — {e.name}</option>
-              ))}
-            </select>
-          </div>
           <div className="field"><label>Objective</label><textarea value={editing?.objective || ""} onChange={(e) => setEditing((p) => p ? { ...p, objective: e.target.value } : p)} rows={2} placeholder="What is the goal of this experiment?" /></div>
           <div className="field"><label>Hypothesis</label><textarea value={editing?.hypothesis || ""} onChange={(e) => setEditing((p) => p ? { ...p, hypothesis: e.target.value } : p)} rows={2} placeholder="What do you expect to observe?" /></div>
 
@@ -379,56 +350,54 @@ export default function ExperimentDesigns() {
                     </div>
                   </div>
 
-                  {/* Actual execution / deviation */}
-                  <div style={{ marginTop: 14, background: "#FFFFFF", borderRadius: 10, border: "1px solid #E0E0E0", overflow: "hidden" }}>
-                    <div style={{ padding: "10px 14px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "#0D9488" }}>
-                      📝 Execution &amp; Deviation Record
+                  {/* Materials & Instruments lists */}
+                  <div className="field" style={{ marginTop: 10 }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Materials</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                      {editing?.materials.map((code, mi) => {
+                        const mat = state.materials.find((m) => m.code === code);
+                        return (
+                          <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                            {mat?.name || code}
+                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => setEditing((p) => p ? { ...p, materials: p.materials.filter((_, idx) => idx !== mi) } : p)}><X size={10} /></button>
+                          </span>
+                        );
+                      })}
                     </div>
-                    <div style={{ padding: "14px" }}>
-                      <div className="field" style={{ marginBottom: 12 }}>
-                        <label style={{ fontSize: "11px", color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4, display: "block" }}>Actual Result Observed</label>
-                        <input
-                          placeholder="What was actually observed during execution..."
-                          value={step.actualResult || ""}
-                          onChange={(e) => updateStep(i, { actualResult: e.target.value })}
-                          style={{ marginBottom: 0 }}
-                        />
-                      </div>
-                      <div className="field" style={{ marginBottom: 12 }}>
-                        <label style={{ fontSize: "11px", color: "#C62828", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4, display: "block" }}>Deviation / Notes</label>
-                        <textarea
-                          placeholder="Any deviation from the planned procedure..."
-                          value={step.deviationNotes || ""}
-                          onChange={(e) => updateStep(i, { deviationNotes: e.target.value })}
-                          rows={2}
-                          style={{ marginBottom: 0 }}
-                        />
-                      </div>
-                      <label className="checkbox-field" style={{ marginBottom: 12 }}>
-                        <input type="checkbox" checked={step.completed} onChange={(e) => updateStep(i, { completed: e.target.checked })} />
-                        <span>Step completed</span>
-                      </label>
-                      <div className="image-upload" style={{ gap: "0.5rem" }}>
-                        {step.actualImage ? (
-                          <div style={{ position: "relative" }}>
-                            <img src={step.actualImage} alt="actual" className="image-preview" style={{ maxHeight: 100, borderRadius: 6 }} />
-                            <button className="icon-btn danger" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }} onClick={() => updateStep(i, { actualImage: "" })}><X size={12} color="#fff" /></button>
-                          </div>
-                        ) : (
-                          <div className="image-preview-placeholder"><ImageIcon size={20} /></div>
-                        )}
-                        <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => { setActiveImageStep({ idx: i, type: "actual" }); fileRef.current?.click(); }}>
-                          {step.actualImage ? "Change photo" : "Upload actual photo"}
-                        </button>
-                      </div>
+                    <select value="" onChange={(e) => { const code = e.target.value; if (code && !editing?.materials.includes(code)) setEditing((p) => p ? { ...p, materials: [...p.materials, code] } : p); }} style={{ marginTop: 6 }}>
+                      <option value="">+ Add material...</option>
+                      {state.materials.map((m) => (
+                        <option key={m.code} value={m.code}>{m.code} — {m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="field" style={{ marginTop: 10 }}>
+                    <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Instruments</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                      {editing?.instruments.map((code, ii) => {
+                        const inst = state.instruments.find((i) => i.code === code);
+                        return (
+                          <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                            {inst?.name || code}
+                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => setEditing((p) => p ? { ...p, instruments: p.instruments.filter((_, idx) => idx !== ii) } : p)}><X size={10} /></button>
+                          </span>
+                        );
+                      })}
                     </div>
+                    <select value="" onChange={(e) => { const code = e.target.value; if (code && !editing?.instruments.includes(code)) setEditing((p) => p ? { ...p, instruments: [...p.instruments, code] } : p); }} style={{ marginTop: 6 }}>
+                      <option value="">+ Add instrument...</option>
+                      {state.instruments.map((i) => (
+                        <option key={i.code} value={i.code}>{i.code} — {i.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="field"><label>Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="Summary of results and next steps..." /></div>
+          <div className="field"><label>Expected Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="What conclusion do you expect from this experiment?" /></div>
 
           <div className="form-actions">
             <button className="btn-primary" onClick={save}>Save</button>

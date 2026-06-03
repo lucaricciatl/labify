@@ -443,12 +443,9 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-export async function downloadExperimentDesignWord(design: ExperimentDesign, experiments: Experiment[]) {
-  const linkedExp = experiments.find((e) => e.id === design.experimentId);
+export async function downloadExperimentDesignWord(design: ExperimentDesign, _experiments: Experiment[]) {
   const rows: TableRow[] = [];
   for (const step of design.steps) {
-    const statusText = step.completed ? "✓ Completed" : "○ Pending";
-    const statusColor = step.completed ? "0D9488" : "90A4AE";
     rows.push(
       new TableRow({
         children: [
@@ -462,19 +459,14 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
               new Paragraph({ children: [new TextRun({ text: step.title, bold: true, font: "Montserrat", size: 22 })] }),
               new Paragraph({ children: [new TextRun({ text: step.description, font: "Montserrat", size: 20, color: "546E7A" })] }),
               step.durationMinutes ? new Paragraph({ children: [new TextRun({ text: `⏱ ${step.durationMinutes} min`, font: "Montserrat", size: 18, color: "90A4AE" })] }) : new Paragraph({ text: "" }),
+              step.safetyNotes ? new Paragraph({ children: [new TextRun({ text: `⚠️ ${step.safetyNotes}`, font: "Montserrat", size: 18, color: "E65100" })] }) : new Paragraph({ text: "" }),
             ],
           }),
           new TableCell({
             verticalAlign: "center",
             children: [
               new Paragraph({ children: [new TextRun({ text: step.expectedResult || "—", font: "Montserrat", size: 20, color: "0D9488" })] }),
-              new Paragraph({ children: [new TextRun({ text: step.actualResult || "—", font: "Montserrat", size: 20, color: "546E7A" })] }),
-              step.deviationNotes ? new Paragraph({ children: [new TextRun({ text: `🔴 ${step.deviationNotes}`, font: "Montserrat", size: 18, color: "C62828", bold: true })] }) : new Paragraph({ text: "" }),
             ],
-          }),
-          new TableCell({
-            verticalAlign: "center",
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: statusText, bold: true, font: "Montserrat", size: 18, color: statusColor })] })],
           }),
         ],
       })
@@ -482,13 +474,11 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
   }
 
   const children: (Paragraph | Table)[] = [
-    // Title
     new Paragraph({
       children: [new TextRun({ text: design.name, bold: true, font: "Montserrat", size: 36, color: "0D9488" })],
       spacing: { after: 200 },
       alignment: AlignmentType.LEFT,
     }),
-    // Metadata
     new Paragraph({
       children: [
         new TextRun({ text: `ID: `, bold: true, font: "Montserrat", size: 18, color: "78909C" }),
@@ -497,18 +487,6 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
       spacing: { after: 100 },
     }),
   ];
-
-  if (linkedExp) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: `Linked Experiment: `, bold: true, font: "Montserrat", size: 18, color: "78909C" }),
-          new TextRun({ text: `${linkedExp.name} (${linkedExp.id})`, font: "Montserrat", size: 18, color: "455A64" }),
-        ],
-        spacing: { after: 200 },
-      })
-    );
-  }
 
   if (design.objective) {
     children.push(
@@ -530,7 +508,6 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
     );
   }
 
-  // Steps Table
   children.push(
     new Paragraph({
       children: [new TextRun({ text: "PROCEDURE STEPS", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
@@ -554,11 +531,7 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
             }),
             new TableCell({
               shading: { fill: "0D9488" },
-              children: [new Paragraph({ children: [new TextRun({ text: "Expected / Actual / Deviation", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
-            }),
-            new TableCell({
-              shading: { fill: "0D9488" },
-              children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Status", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
+              children: [new Paragraph({ children: [new TextRun({ text: "Expected Result", bold: true, font: "Montserrat", size: 20, color: "FFFFFF" })] })],
             }),
           ],
         }),
@@ -570,19 +543,17 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, exp
   if (design.conclusion) {
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: "CONCLUSION", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
+        children: [new TextRun({ text: "EXPECTED CONCLUSION", bold: true, font: "Montserrat", size: 18, color: "0D9488" })],
         spacing: { before: 400, after: 100 },
       }),
       new Paragraph({ children: [new TextRun({ text: design.conclusion, font: "Montserrat", size: 22, color: "37474F" })], spacing: { after: 200 } })
     );
   }
 
-  // Footer
-  const completed = design.steps.filter((s) => s.completed).length;
   children.push(
     new Paragraph({
       children: [
-        new TextRun({ text: `Generated by Labify · ${completed}/${design.steps.length} steps completed · ${new Date().toLocaleDateString()}`, font: "Montserrat", size: 16, color: "90A4AE", italics: true }),
+        new TextRun({ text: `Generated by Labify · ${design.steps.length} steps · ${new Date().toLocaleDateString()}`, font: "Montserrat", size: 16, color: "90A4AE", italics: true }),
       ],
       alignment: AlignmentType.CENTER,
       spacing: { before: 400 },

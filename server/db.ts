@@ -40,10 +40,13 @@ const init = db.transaction(() => {
     CREATE TABLE IF NOT EXISTS experiments (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      design_id TEXT,
       starting_date TEXT NOT NULL,
       ending_date TEXT NOT NULL,
       materials_json TEXT DEFAULT '[]',
       instruments_json TEXT DEFAULT '[]',
+      steps_json TEXT DEFAULT '[]',
+      conclusion TEXT,
       doc_links_json TEXT DEFAULT '[]',
       attachments_json TEXT DEFAULT '[]'
     );
@@ -77,10 +80,10 @@ const init = db.transaction(() => {
       verification_token TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
     CREATE TABLE IF NOT EXISTS experiment_designs (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      experiment_id TEXT,
       objective TEXT,
       hypothesis TEXT,
       materials_json TEXT DEFAULT '[]',
@@ -91,6 +94,35 @@ const init = db.transaction(() => {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // ─── Migration: add columns to experiments if they don't exist ─
+  try { db.exec(`ALTER TABLE experiments ADD COLUMN design_id TEXT`); } catch {}
+  try { db.exec(`ALTER TABLE experiments ADD COLUMN steps_json TEXT DEFAULT '[]'`); } catch {}
+  try { db.exec(`ALTER TABLE experiments ADD COLUMN conclusion TEXT`); } catch {}
+
+  // ─── Migration: drop experiment_id from experiment_designs ─────
+  const designCols = db.prepare("PRAGMA table_info(experiment_designs)").all() as { name: string }[];
+  const hasExpId = designCols.some((c) => c.name === "experiment_id");
+  if (hasExpId) {
+    db.exec(`
+      CREATE TABLE _tmp_experiment_designs (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        objective TEXT,
+        hypothesis TEXT,
+        materials_json TEXT DEFAULT '[]',
+        instruments_json TEXT DEFAULT '[]',
+        steps_json TEXT DEFAULT '[]',
+        conclusion TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+      INSERT INTO _tmp_experiment_designs (id, name, objective, hypothesis, materials_json, instruments_json, steps_json, conclusion, created_at, updated_at)
+      SELECT id, name, objective, hypothesis, materials_json, instruments_json, steps_json, conclusion, created_at, updated_at FROM experiment_designs;
+      DROP TABLE experiment_designs;
+      ALTER TABLE _tmp_experiment_designs RENAME TO experiment_designs;
+    `);
+  }
 });
 init();
 

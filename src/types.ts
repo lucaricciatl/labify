@@ -1,32 +1,3 @@
-export interface DesignStep {
-  id: string;
-  order: number;
-  title: string;
-  description: string;
-  durationMinutes?: number;
-  safetyNotes?: string;
-  expectedResult?: string;
-  image?: string;
-  actualResult?: string;
-  deviationNotes?: string;
-  actualImage?: string;
-  completed: boolean;
-}
-
-export interface ExperimentDesign {
-  id: string;
-  name: string;
-  experimentId?: string;
-  objective?: string;
-  hypothesis?: string;
-  materials: string[];
-  instruments: string[];
-  steps: DesignStep[];
-  conclusion?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface DocumentLink {
   id: string;
   label: string;
@@ -101,13 +72,57 @@ export interface ExperimentInstrument {
   quantityNeeded: number;
 }
 
+// ─── Design = Protocol / Template ────────────────────────────────
+export interface DesignStep {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  durationMinutes?: number;
+  safetyNotes?: string;
+  expectedResult?: string;
+  image?: string; // reference / planned image
+}
+
+export interface ExperimentDesign {
+  id: string;
+  name: string;
+  objective?: string;
+  hypothesis?: string;
+  materials: string[]; // material codes
+  instruments: string[]; // instrument codes
+  steps: DesignStep[];
+  conclusion?: string; // expected conclusion
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ─── Experiment = Execution Instance ───────────────────────────
+export interface ExperimentStep {
+  id: string;
+  order: number;
+  title: string;
+  description: string;
+  durationMinutes?: number; // planned
+  safetyNotes?: string; // planned
+  expectedResult?: string; // planned
+  image?: string; // planned reference image
+  actualResult?: string; // actual observed result
+  deviationNotes?: string; // deviation from plan
+  actualImage?: string; // actual photo
+  completed: boolean;
+}
+
 export interface Experiment {
   id: string;
   name: string;
+  designId?: string; // links to the design this experiment follows
   materials: ExperimentMaterial[];
   instruments: ExperimentInstrument[];
+  steps: ExperimentStep[]; // copied from design + execution data
   startingDate: string;
   endingDate: string;
+  conclusion?: string; // actual conclusion from execution
   docLinks?: DocumentLink[];
   attachments?: Attachment[];
 }
