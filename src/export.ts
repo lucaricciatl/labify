@@ -55,6 +55,45 @@ const BOLD = {
   font: { bold: true },
 };
 
+const ZEBRA_STYLE = {
+  fill: { fgColor: { rgb: "F8FAFA" }, patternType: "solid" },
+};
+
+const TOTAL_ROW_STYLE = {
+  font: { bold: true, color: { rgb: "FFFFFF" } },
+  fill: { fgColor: { rgb: "0D9488" }, patternType: "solid" },
+  border: {
+    top: { style: "medium", color: { rgb: "0F766E" } },
+    bottom: { style: "medium", color: { rgb: "0F766E" } },
+    left: { style: "thin", color: { rgb: "0F766E" } },
+    right: { style: "thin", color: { rgb: "0F766E" } },
+  },
+  alignment: { horizontal: "right", vertical: "center" },
+};
+
+const TITLE_ROW_STYLE = {
+  font: { bold: true, sz: 16, color: { rgb: "0D9488" } },
+  alignment: { horizontal: "left", vertical: "center" },
+};
+
+const SUBTITLE_ROW_STYLE = {
+  font: { sz: 10, color: { rgb: "78909C" } },
+  alignment: { horizontal: "left", vertical: "center" },
+};
+
+function applyZebraStriping(ws: XLSX.WorkSheet, range: string) {
+  const decoded = XLSX.utils.decode_range(range);
+  for (let R = decoded.s.r; R <= decoded.e.r; ++R) {
+    if ((R - decoded.s.r) % 2 === 1) {
+      for (let C = decoded.s.c; C <= decoded.e.c; ++C) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[addr]) continue;
+        ws[addr].s = { ...ws[addr].s, ...ZEBRA_STYLE };
+      }
+    }
+  }
+}
+
 function applyHeaderStyle(ws: XLSX.WorkSheet, range: string) {
   const decoded = XLSX.utils.decode_range(range);
   for (let R = decoded.s.r; R <= decoded.e.r; ++R) {
@@ -97,14 +136,15 @@ export function downloadExcel(filename: string, sheetName: string, rows: Record<
     const decoded = XLSX.utils.decode_range(range);
     // Header row
     applyHeaderStyle(ws, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
-    // Data rows
+    // Data rows: borders + zebra
     if (decoded.e.r > 0) {
       applyCellBorders(ws, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
+      applyZebraStriping(ws, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
     }
     // Column widths based on headers
     setColWidths(
       ws,
-      Object.keys(rows[0] ?? {}).map((k) => ({ wch: Math.max(k.length + 2, 12) }))
+      Object.keys(rows[0] ?? {}).map((k) => ({ wch: Math.max(k.length + 3, 14) }))
     );
   }
 
@@ -208,6 +248,7 @@ export function downloadExperimentExcel(
     applyHeaderStyle(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow, c: 0 }, e: { r: overviewHeaderRow, c: 1 } }));
     // Overview data
     applyCellBorders(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow + 1, c: 0 }, e: { r: overviewDataEnd, c: 1 } }));
+    applyZebraStriping(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow + 1, c: 0 }, e: { r: overviewDataEnd, c: 1 } }));
     // Bold + right-align the cost field
     const costCell = XLSX.utils.encode_cell({ r: overviewHeaderRow + 1 + overview.findIndex((o) => o.Field === "Total Estimated Cost"), c: 1 });
     if (ws1[costCell]) {
@@ -266,6 +307,7 @@ export function downloadExperimentExcel(
     ws1[titleCell].s = { ...TITLE_STYLE };
     applyHeaderStyle(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow, c: 0 }, e: { r: overviewHeaderRow, c: 1 } }));
     applyCellBorders(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow + 1, c: 0 }, e: { r: overviewDataEnd, c: 1 } }));
+    applyZebraStriping(ws1, XLSX.utils.encode_range({ s: { r: overviewHeaderRow + 1, c: 0 }, e: { r: overviewDataEnd, c: 1 } }));
     const costCell = XLSX.utils.encode_cell({ r: overviewHeaderRow + 1 + overview.findIndex((o) => o.Field === "Total Estimated Cost"), c: 1 });
     if (ws1[costCell]) ws1[costCell].s = { ...ws1[costCell].s, ...CURRENCY_STYLE, ...BOLD };
     setColWidths(ws1, [{ wch: 20 }, { wch: 35 }]);
@@ -302,6 +344,7 @@ export function downloadExperimentExcel(
     applyHeaderStyle(ws2, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
     if (decoded.e.r > 0) {
       applyCellBorders(ws2, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r - 1, c: decoded.e.c } }));
+      applyZebraStriping(ws2, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r - 1, c: decoded.e.c } }));
       // Subtotal row
       for (let C = 0; C <= decoded.e.c; ++C) {
         const addr = XLSX.utils.encode_cell({ r: decoded.e.r, c: C });
@@ -363,6 +406,7 @@ export function downloadExperimentExcel(
     applyHeaderStyle(ws3, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
     if (decoded.e.r > 0) {
       applyCellBorders(ws3, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r - 1, c: decoded.e.c } }));
+      applyZebraStriping(ws3, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r - 1, c: decoded.e.c } }));
       for (let C = 0; C <= decoded.e.c; ++C) {
         const addr = XLSX.utils.encode_cell({ r: decoded.e.r, c: C });
         if (ws3[addr]) ws3[addr].s = { ...ws3[addr].s, ...SUBTOTAL_STYLE };
@@ -402,6 +446,7 @@ export function downloadExperimentExcel(
     const decoded = XLSX.utils.decode_range(ws4["!ref"]!);
     applyHeaderStyle(ws4, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
     applyCellBorders(ws4, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
+    applyZebraStriping(ws4, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
     // Bold + currency on subtotal column
     for (let R = 1; R <= decoded.e.r; ++R) {
       const addr = XLSX.utils.encode_cell({ r: R, c: 1 });
@@ -429,6 +474,7 @@ export function downloadExperimentExcel(
     const decoded = XLSX.utils.decode_range(ws5["!ref"]!);
     applyHeaderStyle(ws5, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
     applyCellBorders(ws5, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
+    applyZebraStriping(ws5, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
     setColWidths(ws5, [{ wch: 10 }, { wch: 30 }, { wch: 50 }]);
     setFreeze(ws5, 1, 0);
   }
@@ -443,6 +489,7 @@ export function downloadDesignBOM(
   allInstruments: { code: string; name: string; supplierName: string; price: number }[]
 ) {
   const wb = XLSX.utils.book_new();
+  const today = new Date().toLocaleDateString();
 
   // ── Sheet 1: Materials ───────────────────────────────────────
   const matRows = design.materials.map((code, idx) => {
@@ -458,25 +505,68 @@ export function downloadDesignBOM(
       "Line Cost": mat?.price ?? 0,
     };
   });
-  const ws1 = XLSX.utils.json_to_sheet(matRows);
+  // Insert title / subtitle above data
+  const ws1Data = [
+    { "#": "", "Material ID": `BOM — ${design.name}`, Name: "", Supplier: "", Unit: "", "Unit Price": "", "Qty Needed": "", "Line Cost": "" },
+    { "#": "", "Material ID": `Design: ${design.id}  ·  ${today}`, Name: "", Supplier: "", Unit: "", "Unit Price": "", "Qty Needed": "", "Line Cost": "" },
+    {}, // blank separator
+    ...matRows,
+  ];
+  const matTotal = matRows.reduce((sum, r) => sum + (r["Line Cost"] as number), 0);
+  ws1Data.push({ "#": "", "Material ID": "", Name: "", Supplier: "", Unit: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": matTotal });
+
+  const ws1 = XLSX.utils.json_to_sheet(ws1Data);
   if (ws1["!ref"]) {
     const decoded = XLSX.utils.decode_range(ws1["!ref"]);
-    applyHeaderStyle(ws1, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
-    applyCellBorders(ws1, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
-    for (let R = 1; R <= decoded.e.r; ++R) {
-      for (const col of [5, 6, 7]) {
+    const lastR = decoded.e.r;
+    const lastC = decoded.e.c;
+
+    // Title row (row 0)
+    const titleRange = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: lastC } });
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws1[addr]) continue;
+      ws1[addr].s = { ...TITLE_ROW_STYLE };
+    }
+    // Subtitle row (row 1)
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 1, c: C });
+      if (!ws1[addr]) continue;
+      ws1[addr].s = { ...SUBTITLE_ROW_STYLE };
+    }
+    // Header row (row 2)
+    applyHeaderStyle(ws1, XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2, c: lastC } }));
+    // Data rows (rows 3 .. lastR-1)
+    applyCellBorders(ws1, XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: lastR - 1, c: lastC } }));
+    applyZebraStriping(ws1, XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: lastR - 1, c: lastC } }));
+    // Currency formatting on Unit Price (5), Qty (6), Line Cost (7)
+    for (let R = 3; R <= lastR - 1; ++R) {
+      for (const col of [5, 7]) {
         const addr = XLSX.utils.encode_cell({ r: R, c: col });
         if (ws1[addr]) ws1[addr].s = { ...ws1[addr].s, ...CURRENCY_STYLE };
       }
     }
-    for (let R = 0; R <= decoded.e.r; ++R) {
+    // Center the # column
+    for (let R = 2; R <= lastR; ++R) {
       const addr = XLSX.utils.encode_cell({ r: R, c: 0 });
       if (ws1[addr]) ws1[addr].s = { ...ws1[addr].s, ...CENTER };
     }
+    // Total row styling
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: lastR, c: C });
+      if (!ws1[addr]) continue;
+      if (C === 7) {
+        ws1[addr].s = { ...TOTAL_ROW_STYLE, numFmt: '"$"#,##0.00' };
+      } else if (C === 5) {
+        ws1[addr].s = { ...TOTAL_ROW_STYLE, numFmt: '"$"#,##0.00' };
+      } else {
+        ws1[addr].s = { ...TOTAL_ROW_STYLE };
+      }
+    }
     setColWidths(ws1, [
-      { wch: 4 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 4 }, { wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
     ]);
-    setFreeze(ws1, 1, 0);
+    setFreeze(ws1, 3, 0);
   }
   XLSX.utils.book_append_sheet(wb, ws1, "Materials");
 
@@ -493,25 +583,64 @@ export function downloadDesignBOM(
       "Line Cost": inst?.price ?? 0,
     };
   });
-  const ws2 = XLSX.utils.json_to_sheet(instRows);
+  const ws2Data = [
+    { "#": "", "Instrument ID": `BOM — ${design.name}`, Name: "", Supplier: "", "Unit Price": "", "Qty Needed": "", "Line Cost": "" },
+    { "#": "", "Instrument ID": `Design: ${design.id}  ·  ${today}`, Name: "", Supplier: "", "Unit Price": "", "Qty Needed": "", "Line Cost": "" },
+    {},
+    ...instRows,
+  ];
+  const instTotal = instRows.reduce((sum, r) => sum + (r["Line Cost"] as number), 0);
+  ws2Data.push({ "#": "", "Instrument ID": "", Name: "", Supplier: "", "Unit Price": "TOTAL", "Qty Needed": "", "Line Cost": instTotal });
+
+  const ws2 = XLSX.utils.json_to_sheet(ws2Data);
   if (ws2["!ref"]) {
     const decoded = XLSX.utils.decode_range(ws2["!ref"]);
-    applyHeaderStyle(ws2, XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: decoded.e.c } }));
-    applyCellBorders(ws2, XLSX.utils.encode_range({ s: { r: 1, c: 0 }, e: { r: decoded.e.r, c: decoded.e.c } }));
-    for (let R = 1; R <= decoded.e.r; ++R) {
-      for (const col of [4, 5, 6]) {
+    const lastR = decoded.e.r;
+    const lastC = decoded.e.c;
+
+    // Title row
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!ws2[addr]) continue;
+      ws2[addr].s = { ...TITLE_ROW_STYLE };
+    }
+    // Subtitle row
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: 1, c: C });
+      if (!ws2[addr]) continue;
+      ws2[addr].s = { ...SUBTITLE_ROW_STYLE };
+    }
+    // Header row (row 2)
+    applyHeaderStyle(ws2, XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2, c: lastC } }));
+    // Data rows
+    applyCellBorders(ws2, XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: lastR - 1, c: lastC } }));
+    applyZebraStriping(ws2, XLSX.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: lastR - 1, c: lastC } }));
+    // Currency
+    for (let R = 3; R <= lastR - 1; ++R) {
+      for (const col of [4, 6]) {
         const addr = XLSX.utils.encode_cell({ r: R, c: col });
         if (ws2[addr]) ws2[addr].s = { ...ws2[addr].s, ...CURRENCY_STYLE };
       }
     }
-    for (let R = 0; R <= decoded.e.r; ++R) {
+    // Center #
+    for (let R = 2; R <= lastR; ++R) {
       const addr = XLSX.utils.encode_cell({ r: R, c: 0 });
       if (ws2[addr]) ws2[addr].s = { ...ws2[addr].s, ...CENTER };
     }
+    // Total row
+    for (let C = 0; C <= lastC; ++C) {
+      const addr = XLSX.utils.encode_cell({ r: lastR, c: C });
+      if (!ws2[addr]) continue;
+      if (C === 4 || C === 6) {
+        ws2[addr].s = { ...TOTAL_ROW_STYLE, numFmt: '"$"#,##0.00' };
+      } else {
+        ws2[addr].s = { ...TOTAL_ROW_STYLE };
+      }
+    }
     setColWidths(ws2, [
-      { wch: 4 }, { wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 4 }, { wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
     ]);
-    setFreeze(ws2, 1, 0);
+    setFreeze(ws2, 3, 0);
   }
   XLSX.utils.book_append_sheet(wb, ws2, "Instruments");
 

@@ -709,7 +709,8 @@ export default function Experiments() {
       {/* Hidden print target for PDF — Material Design + Montserrat */}
       {printTarget && (
         <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
-          <div ref={printRef} style={{ fontFamily: "'Montserrat', system-ui, sans-serif", background: "#F5F5F5", padding: 40, width: 794, color: "#263238" }}>
+          <div ref={printRef} style={{ fontFamily: "'Montserrat', 'Segoe UI', system-ui, sans-serif", background: "#FFFFFF", padding: 40, width: 794, color: "#263238" }}>
+            <style>{"@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');"}</style>
             {/* Header */}
             <div style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "24px 32px", marginBottom: 24 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 6 }}>Experiment Execution Report</div>
