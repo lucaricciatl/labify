@@ -7,6 +7,7 @@ RUN apk add --no-cache python3 make g++ sqlite-dev
 WORKDIR /app
 
 COPY package*.json ./
+# Force rebuild when package.json changes — do NOT use --ignore-scripts
 RUN npm ci
 
 COPY tsconfig.server.json ./
