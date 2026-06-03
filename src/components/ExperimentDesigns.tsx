@@ -450,12 +450,6 @@ export default function ExperimentDesigns() {
                   <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>ID</span>
                   <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.id}</div>
                 </div>
-                {printTarget.experimentId && (
-                  <div>
-                    <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Linked Experiment</span>
-                    <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{state.experiments.find((e) => e.id === printTarget.experimentId)?.name || printTarget.experimentId}</div>
-                  </div>
-                )}
                 <div>
                   <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</span>
                   <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.updatedAt || printTarget.createdAt}</div>
