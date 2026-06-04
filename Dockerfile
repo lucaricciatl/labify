@@ -7,7 +7,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Limit memory to avoid OOM during build
-ENV NODE_OPTIONS="--max-old-space-size=512"
+ENV NODE_OPTIONS="--max-old-space-size=384"
 
 # Install dependencies first (cache layer)
 COPY package*.json ./
