@@ -93,6 +93,7 @@ export interface ExperimentDesign {
   instruments: string[]; // instrument codes
   steps: DesignStep[];
   conclusion?: string; // expected conclusion
+  attachments?: Attachment[];
   createdAt?: string;
   updatedAt?: string;
 }

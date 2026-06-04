@@ -18,10 +18,11 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
-import type { ExperimentDesign, DesignStep } from "../types";
+import type { ExperimentDesign, DesignStep, Attachment } from "../types";
 import { generateId } from "../utils";
 import Modal from "./Modal";
 import { downloadExperimentDesignWord, downloadExperimentDesignPDF, downloadDesignBOM } from "../export";
+import { useAttachmentHelpers, AttachmentList, AttachmentUploader } from "./Attachments";
 
 function emptyStep(order: number): DesignStep {
   return {
@@ -46,6 +47,7 @@ function emptyDesign(): ExperimentDesign {
     instruments: [],
     steps: [emptyStep(0)],
     conclusion: "",
+    attachments: [],
     createdAt: new Date().toISOString().slice(0, 10),
     updatedAt: new Date().toISOString().slice(0, 10),
   };
@@ -80,6 +82,10 @@ export default function ExperimentDesigns() {
   const printRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [activeImageStep, setActiveImageStep] = useState<{ idx: number; type: "planned" | "actual" } | null>(null);
+  const { fileRef: attachFileRef, addFile, removeFile } = useAttachmentHelpers(
+    editing?.attachments || [],
+    (items: Attachment[]) => setEditing((p) => p ? { ...p, attachments: items } : p)
+  );
 
   const openAdd = () => {
     try {
@@ -413,6 +419,12 @@ export default function ExperimentDesigns() {
 
           <div className="field"><label>Expected Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="What conclusion do you expect from this experiment?" /></div>
 
+          <div className="field">
+            <label>Documents & Attachments</label>
+            <AttachmentList items={editing?.attachments} onRemove={removeFile} editable />
+            <AttachmentUploader fileRef={attachFileRef} onChange={addFile} label="Add document" />
+          </div>
+
           <div className="form-actions">
             <button className="btn-primary" onClick={save}>Save</button>
           </div>
@@ -513,14 +525,6 @@ export default function ExperimentDesigns() {
                     pageBreakInside: "avoid",
                   }}
                 >
-                    /* Step accent bar */
-                  <div
-                    style={{
-                      height: 4,
-                      background: "#0D9488",
-                    }}
-                  />
-
                   <div style={{ padding: "20px 28px" }}>
                     {/* Step header */}
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>

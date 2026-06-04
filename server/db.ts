@@ -90,6 +90,7 @@ const init = db.transaction(() => {
       instruments_json TEXT DEFAULT '[]',
       steps_json TEXT DEFAULT '[]',
       conclusion TEXT,
+      attachments_json TEXT DEFAULT '[]',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -123,6 +124,9 @@ const init = db.transaction(() => {
       ALTER TABLE _tmp_experiment_designs RENAME TO experiment_designs;
     `);
   }
+
+  // ─── Migration: add attachments_json to experiment_designs ──
+  try { db.exec(`ALTER TABLE experiment_designs ADD COLUMN attachments_json TEXT DEFAULT '[]'`); } catch {}
 });
 init();
 

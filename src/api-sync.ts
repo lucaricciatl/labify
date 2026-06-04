@@ -79,6 +79,7 @@ function fixExperimentDesign(d: Record<string, unknown>) {
     instruments: d.instruments ?? [],
     steps: d.steps ?? [],
     conclusion: d.conclusion ?? undefined,
+    attachments: d.attachments ?? [],
     createdAt: d.created_at ?? d.createdAt ?? undefined,
     updatedAt: d.updated_at ?? d.updatedAt ?? undefined,
   };
