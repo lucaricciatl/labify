@@ -3,6 +3,7 @@ import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem, 
 import { db } from "./db";
 import { markDirty, onSyncChange, restoreFromCloud } from "./sync";
 import type { SyncStatus } from "./sync";
+import { pullFromApi, pushToApi, checkApiAvailable, isApiAvailable } from "./api-sync";
 
 export interface AppState {
   suppliers: Supplier[];
@@ -286,6 +287,7 @@ const StoreContext = createContext<{
   dispatch: React.Dispatch<Action>;
   refresh: () => Promise<void>;
   syncStatus: SyncStatus;
+  pullNow: () => Promise<void>;
 } | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -299,11 +301,57 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => { unsubscribe(); };
   }, []);
 
+  const pushToServer = useCallback(async (s: AppState) => {
+    try {
+      await pushToApi({
+        suppliers: s.suppliers as unknown as Record<string, unknown>[],
+        materials: s.materials as unknown as Record<string, unknown>[],
+        instruments: s.instruments as unknown as Record<string, unknown>[],
+        experiments: s.experiments as unknown as Record<string, unknown>[],
+        experimentDesigns: s.experimentDesigns as unknown as Record<string, unknown>[],
+        orders: s.orders as unknown as Record<string, unknown>[],
+        inventory: s.inventory as unknown as Record<string, unknown>[],
+      });
+    } catch {
+      // silent
+    }
+  }, []);
+
+  const prevCountsRef = useRef({ s: 0, m: 0, i: 0, e: 0, ed: 0, o: 0, inv: 0 });
   useEffect(() => {
     if (state.loaded) {
       markDirty(state);
+      const counts = { s: state.suppliers.length, m: state.materials.length, i: state.instruments.length, e: state.experiments.length, ed: state.experimentDesigns.length, o: state.orders.length, inv: state.inventory.length };
+      const prev = prevCountsRef.current;
+      if (isApiAvailable() !== false && (counts.s !== prev.s || counts.m !== prev.m || counts.i !== prev.i || counts.e !== prev.e || counts.ed !== prev.ed || counts.o !== prev.o || counts.inv !== prev.inv)) {
+        prevCountsRef.current = counts;
+        pushToServer(state);
+      }
     }
-  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.experimentDesigns.length, state.orders.length, state.inventory.length, state.loaded]);
+  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.experimentDesigns.length, state.orders.length, state.inventory.length, state.loaded, pushToServer]);
+
+  const pullFromServer = async () => {
+    try {
+      const available = await checkApiAvailable();
+      if (!available) return;
+      const result = await pullFromApi();
+      if (result.ok && result.data) {
+        const d = result.data;
+        await Promise.all(d.suppliers.map((s) => db.putSupplier(s as Supplier)));
+        await Promise.all(d.materials.map((m) => db.putMaterial(m as Material)));
+        await Promise.all(d.instruments.map((i) => db.putInstrument(i as Instrument)));
+        await Promise.all(d.experiments.map((e) => db.putExperiment(e as Experiment)));
+        await Promise.all(d.experimentDesigns.map((ed) => db.putExperimentDesign(ed as ExperimentDesign)));
+        await Promise.all(d.orders.map((o) => db.putOrder(o as Order)));
+        await Promise.all(d.inventory.map((inv) => db.putInventoryItem(inv as InventoryItem)));
+        console.log("[API Sync] Pulled from server:", result.message);
+        return true;
+      }
+    } catch (e) {
+      console.warn("[API Sync] Pull failed:", e);
+    }
+    return false;
+  };
 
   const load = async () => {
     try {
@@ -316,6 +364,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(cloud.orders?.map((o: Order) => db.putOrder(o)) ?? []);
         await Promise.all(cloud.experimentDesigns?.map((d: ExperimentDesign) => db.putExperimentDesign(d)) ?? []);
       }
+
+      // Pull from API server if configured
+      await pullFromServer();
 
       const [suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory] = await Promise.all([
         db.getAllSuppliers(),
@@ -365,8 +416,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await load();
   }, []);
 
+  const pullNow = useCallback(async () => {
+    await pullFromServer();
+    await load();
+  }, []);
+
   return (
-    <StoreContext.Provider value={{ state, dispatch, refresh, syncStatus }}>
+    <StoreContext.Provider value={{ state, dispatch, refresh, syncStatus, pullNow }}>
       {children}
     </StoreContext.Provider>
   );
