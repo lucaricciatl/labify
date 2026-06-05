@@ -94,7 +94,33 @@ const init = db.transaction(() => {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+    INSERT OR IGNORE INTO meta (key, value) VALUES ('version', '0');
   `);
+
+  // ─── Create triggers to bump version on every write ─
+  const tables = ['suppliers', 'materials', 'instruments', 'experiments', 'orders', 'inventory', 'experiment_designs'];
+  for (const table of tables) {
+    const bumpSql = `
+      CREATE TRIGGER IF NOT EXISTS ${table}_version_bump_insert AFTER INSERT ON ${table}
+      BEGIN
+        UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'version';
+      END;
+      CREATE TRIGGER IF NOT EXISTS ${table}_version_bump_update AFTER UPDATE ON ${table}
+      BEGIN
+        UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'version';
+      END;
+      CREATE TRIGGER IF NOT EXISTS ${table}_version_bump_delete AFTER DELETE ON ${table}
+      BEGIN
+        UPDATE meta SET value = CAST(value AS INTEGER) + 1 WHERE key = 'version';
+      END;
+    `;
+    db.exec(bumpSql);
+  }
 
   // ─── Migration: add columns to experiments if they don't exist ─
   try { db.exec(`ALTER TABLE experiments ADD COLUMN design_id TEXT`); } catch {}

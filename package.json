@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "server:dev": "tsx watch server/index.ts",
     "server:start": "tsx server/index.ts",
-    "server:build": "tsc -p tsconfig.server.json"
+    "server:build": "tsc -p tsconfig.server.json",
+    "mcp:start": "tsx server/mcp-server.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

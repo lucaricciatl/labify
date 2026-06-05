@@ -345,16 +345,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(cloud.experimentDesigns?.map((d: ExperimentDesign) => db.putExperimentDesign(d)) ?? []);
       }
 
-      // Only pull from API server if local DB is empty (first run).
-      // Polling handles subsequent updates when the server version changes.
-      const localCheck = await Promise.all([
-        db.getAllSuppliers(),
-        db.getAllMaterials(),
-      ]);
-      const hasLocalData = localCheck[0].length > 0 || localCheck[1].length > 0;
-      if (!hasLocalData) {
-        await pullFromServer();
-      }
+      // Always pull from API server on load to sync latest data
+      await pullFromServer();
 
       const [suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory] = await Promise.all([
         db.getAllSuppliers(),

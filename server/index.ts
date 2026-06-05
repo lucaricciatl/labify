@@ -130,7 +130,14 @@ app.get("/api/auth/first-run", (_req, res) => {
 
 // ─── Health ──────────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString(), emailConfigured: !!transporter, emailReady });
+  const meta = db.prepare("SELECT value FROM meta WHERE key = 'version'").get() as { value: string } | undefined;
+  res.json({ status: "ok", timestamp: new Date().toISOString(), emailConfigured: !!transporter, emailReady, version: Number(meta?.value ?? 0) });
+});
+
+// ─── Version (lightweight polling) ──────────────────────────────
+app.get("/api/version", (_req, res) => {
+  const meta = db.prepare("SELECT value FROM meta WHERE key = 'version'").get() as { value: string } | undefined;
+  res.json({ version: Number(meta?.value ?? 0) });
 });
 
 // ─── Auth ────────────────────────────────────────────────────────
