@@ -16,7 +16,6 @@ import {
   LogOut,
   User,
   FileText,
-  Download,
 } from "lucide-react";
 import { StoreProvider, useStore } from "./store";
 import { ThemeProvider, useTheme } from "./theme";
@@ -37,9 +36,8 @@ function SidebarNav() {
   const [tab, setTab] = useState<Tab>("experiments");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { theme, toggle } = useTheme();
-  const { state, syncStatus, pullNow } = useStore();
+  const { state, syncStatus } = useStore();
   const { user, logout } = useAuth();
-  const [syncingApi, setSyncingApi] = useState(false);
   const apiOk = isApiAvailable();
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
@@ -51,15 +49,6 @@ function SidebarNav() {
     { key: "suppliers", label: "Suppliers", icon: <Truck size={18} /> },
     { key: "inventory", label: "Inventory", icon: <ClipboardList size={18} /> },
   ];
-
-  const handlePullFromApi = async () => {
-    setSyncingApi(true);
-    try {
-      await pullNow();
-    } finally {
-      setSyncingApi(false);
-    }
-  };
 
   return (
     <div className="app-shell">
@@ -104,16 +93,6 @@ function SidebarNav() {
               </>
             )}
           </div>
-
-          <button
-            className="sidebar-tool-btn"
-            onClick={handlePullFromApi}
-            disabled={syncingApi || apiOk === false}
-            title="Pull latest data from API server"
-          >
-            <Download size={15} className={syncingApi ? "spin" : ""} />
-            {syncingApi ? "Syncing..." : "Pull from API"}
-          </button>
 
           <button className="sidebar-tool-btn" onClick={() => setSettingsOpen(true)}>
             <Settings size={15} /> Sync Settings

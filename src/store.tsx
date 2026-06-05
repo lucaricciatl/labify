@@ -3,7 +3,9 @@ import type { Supplier, Material, Instrument, Experiment, Order, InventoryItem, 
 import { db } from "./db";
 import { markDirty, onSyncChange, restoreFromCloud } from "./sync";
 import type { SyncStatus } from "./sync";
-import { pullFromApi, pushToApi, checkApiAvailable, isApiAvailable } from "./api-sync";
+import { pullFromApi, checkApiAvailable } from "./api-sync";
+import * as api from "./api-helper";
+import { startPolling } from "./poll";
 
 export interface AppState {
   suppliers: Supplier[];
@@ -301,39 +303,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => { unsubscribe(); };
   }, []);
 
-  const pushToServer = useCallback(async (s: AppState) => {
-    try {
-      await pushToApi({
-        suppliers: s.suppliers as unknown as Record<string, unknown>[],
-        materials: s.materials as unknown as Record<string, unknown>[],
-        instruments: s.instruments as unknown as Record<string, unknown>[],
-        experiments: s.experiments as unknown as Record<string, unknown>[],
-        experimentDesigns: s.experimentDesigns as unknown as Record<string, unknown>[],
-        orders: s.orders as unknown as Record<string, unknown>[],
-        inventory: s.inventory as unknown as Record<string, unknown>[],
-      });
-    } catch {
-      // silent
-    }
-  }, []);
-
-  const prevCountsRef = useRef({ s: 0, m: 0, i: 0, e: 0, ed: 0, o: 0, inv: 0 });
+  // Sync to WebDAV on state changes (debounced)
   useEffect(() => {
     if (state.loaded) {
       markDirty(state);
-      const counts = { s: state.suppliers.length, m: state.materials.length, i: state.instruments.length, e: state.experiments.length, ed: state.experimentDesigns.length, o: state.orders.length, inv: state.inventory.length };
-      const prev = prevCountsRef.current;
-      if (isApiAvailable() !== false && (counts.s !== prev.s || counts.m !== prev.m || counts.i !== prev.i || counts.e !== prev.e || counts.ed !== prev.ed || counts.o !== prev.o || counts.inv !== prev.inv)) {
-        prevCountsRef.current = counts;
-        pushToServer(state);
-      }
     }
-  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.experimentDesigns.length, state.orders.length, state.inventory.length, state.loaded, pushToServer]);
+  }, [state.suppliers.length, state.materials.length, state.instruments.length, state.experiments.length, state.experimentDesigns.length, state.orders.length, state.inventory.length, state.loaded]);
 
-  const pullFromServer = async () => {
+  const pullFromServer = useCallback(async () => {
     try {
       const available = await checkApiAvailable();
-      if (!available) return;
+      if (!available) return false;
       const result = await pullFromApi();
       if (result.ok && result.data) {
         const d = result.data;
@@ -351,9 +331,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       console.warn("[API Sync] Pull failed:", e);
     }
     return false;
-  };
+  }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const cloud = await restoreFromCloud();
       if (cloud) {
@@ -365,8 +345,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await Promise.all(cloud.experimentDesigns?.map((d: ExperimentDesign) => db.putExperimentDesign(d)) ?? []);
       }
 
-      // Pull from API server if configured
-      await pullFromServer();
+      // Only pull from API server if local DB is empty (first run).
+      // Polling handles subsequent updates when the server version changes.
+      const localCheck = await Promise.all([
+        db.getAllSuppliers(),
+        db.getAllMaterials(),
+      ]);
+      const hasLocalData = localCheck[0].length > 0 || localCheck[1].length > 0;
+      if (!hasLocalData) {
+        await pullFromServer();
+      }
 
       const [suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory] = await Promise.all([
         db.getAllSuppliers(),
@@ -378,17 +366,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         db.getAllInventory(),
       ]);
 
-      // Migration: re-seed instruments if they are missing images
+      // Migration: add images to instruments that are missing them (one-time)
+      const MIGRATION_KEY = "labify-instruments-image-migration-v2";
+      const migrationDone = localStorage.getItem(MIGRATION_KEY);
       const instrumentsNeedImages = instruments.length > 0 && instruments.some((i) => !i.image);
-      if (instrumentsNeedImages) {
-        await db.clearAll();
-        await Promise.all(defaultState.suppliers.map((s) => db.putSupplier(s)));
-        await Promise.all(defaultState.materials.map((m) => db.putMaterial(m)));
-        await Promise.all(defaultState.instruments.map((i) => db.putInstrument(i)));
-        await Promise.all(defaultState.experiments.map((e) => db.putExperiment(e)));
-        await Promise.all(defaultState.orders.map((o) => db.putOrder(o)));
-        await Promise.all(defaultState.inventory.map((iv) => db.putInventoryItem(iv)));
-        dispatch({ type: "HYDRATE", payload: { ...defaultState, loaded: true } });
+      if (instrumentsNeedImages && !migrationDone) {
+        // Only update instruments — don't wipe user data
+        for (const inst of instruments) {
+          if (!inst.image) {
+            const defaultInst = defaultState.instruments.find((d) => d.code === inst.code);
+            if (defaultInst?.image) {
+              await db.putInstrument({ ...inst, image: defaultInst.image });
+            }
+          }
+        }
+        localStorage.setItem(MIGRATION_KEY, "1");
+        // Reload instruments with images
+        const updatedInstruments = await db.getAllInstruments();
+        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments: updatedInstruments, experiments, experimentDesigns, orders, inventory, loaded: true } });
         return;
       }
 
@@ -406,11 +401,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } catch {
       dispatch({ type: "HYDRATE", payload: { loaded: true } });
     }
-  };
+  }, [pullFromServer]);
 
+  // Start polling for API changes
   useEffect(() => {
     load();
-  }, []);
+    // Poll the API server for changes every 5 seconds
+    startPolling(async () => {
+      const changed = await pullFromServer();
+      if (changed) {
+        // Reload local state from DB
+        const [suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory] = await Promise.all([
+          db.getAllSuppliers(),
+          db.getAllMaterials(),
+          db.getAllInstruments(),
+          db.getAllExperiments(),
+          db.getAllExperimentDesigns(),
+          db.getAllOrders(),
+          db.getAllInventory(),
+        ]);
+        dispatch({ type: "HYDRATE", payload: { suppliers, materials, instruments, experiments, experimentDesigns, orders, inventory, loaded: true } });
+      }
+    });
+  }, [pullFromServer, load]);
 
   const refresh = useCallback(async () => {
     await load();
@@ -437,63 +450,63 @@ export function useStore() {
 export function useSupplierActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (s: Supplier) => { await db.putSupplier(s); dispatch({ type: "ADD_SUPPLIER", payload: s }); }, [dispatch]),
-    update: useCallback(async (s: Supplier) => { await db.putSupplier(s); dispatch({ type: "UPDATE_SUPPLIER", payload: s }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteSupplier(id); dispatch({ type: "DELETE_SUPPLIER", payload: id }); }, [dispatch]),
+    add: useCallback(async (s: Supplier) => { await db.putSupplier(s); dispatch({ type: "ADD_SUPPLIER", payload: s }); api.suppliers.add(s).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (s: Supplier) => { await db.putSupplier(s); dispatch({ type: "UPDATE_SUPPLIER", payload: s }); api.suppliers.update(s.id, s).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteSupplier(id); dispatch({ type: "DELETE_SUPPLIER", payload: id }); api.suppliers.delete(id).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useMaterialActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (m: Material) => { await db.putMaterial(m); dispatch({ type: "ADD_MATERIAL", payload: m }); }, [dispatch]),
-    update: useCallback(async (m: Material) => { await db.putMaterial(m); dispatch({ type: "UPDATE_MATERIAL", payload: m }); }, [dispatch]),
-    remove: useCallback(async (code: string) => { await db.deleteMaterial(code); dispatch({ type: "DELETE_MATERIAL", payload: code }); }, [dispatch]),
+    add: useCallback(async (m: Material) => { await db.putMaterial(m); dispatch({ type: "ADD_MATERIAL", payload: m }); api.materials.add(m as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (m: Material) => { await db.putMaterial(m); dispatch({ type: "UPDATE_MATERIAL", payload: m }); api.materials.update(m.code, m as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (code: string) => { await db.deleteMaterial(code); dispatch({ type: "DELETE_MATERIAL", payload: code }); api.materials.delete(code).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useInstrumentActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (i: Instrument) => { await db.putInstrument(i); dispatch({ type: "ADD_INSTRUMENT", payload: i }); }, [dispatch]),
-    update: useCallback(async (i: Instrument) => { await db.putInstrument(i); dispatch({ type: "UPDATE_INSTRUMENT", payload: i }); }, [dispatch]),
-    remove: useCallback(async (code: string) => { await db.deleteInstrument(code); dispatch({ type: "DELETE_INSTRUMENT", payload: code }); }, [dispatch]),
+    add: useCallback(async (i: Instrument) => { await db.putInstrument(i); dispatch({ type: "ADD_INSTRUMENT", payload: i }); api.instruments.add(i as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (i: Instrument) => { await db.putInstrument(i); dispatch({ type: "UPDATE_INSTRUMENT", payload: i }); api.instruments.update(i.code, i as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (code: string) => { await db.deleteInstrument(code); dispatch({ type: "DELETE_INSTRUMENT", payload: code }); api.instruments.delete(code).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useExperimentActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (e: Experiment) => { await db.putExperiment(e); dispatch({ type: "ADD_EXPERIMENT", payload: e }); }, [dispatch]),
-    update: useCallback(async (e: Experiment) => { await db.putExperiment(e); dispatch({ type: "UPDATE_EXPERIMENT", payload: e }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteExperiment(id); dispatch({ type: "DELETE_EXPERIMENT", payload: id }); }, [dispatch]),
+    add: useCallback(async (e: Experiment) => { await db.putExperiment(e); dispatch({ type: "ADD_EXPERIMENT", payload: e }); api.experiments.add(e as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (e: Experiment) => { await db.putExperiment(e); dispatch({ type: "UPDATE_EXPERIMENT", payload: e }); api.experiments.update(e.id, e as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteExperiment(id); dispatch({ type: "DELETE_EXPERIMENT", payload: id }); api.experiments.delete(id).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useOrderActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (o: Order) => { await db.putOrder(o); dispatch({ type: "ADD_ORDER", payload: o }); }, [dispatch]),
-    update: useCallback(async (o: Order) => { await db.putOrder(o); dispatch({ type: "UPDATE_ORDER", payload: o }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteOrder(id); dispatch({ type: "DELETE_ORDER", payload: id }); }, [dispatch]),
+    add: useCallback(async (o: Order) => { await db.putOrder(o); dispatch({ type: "ADD_ORDER", payload: o }); api.orders.add(o as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (o: Order) => { await db.putOrder(o); dispatch({ type: "UPDATE_ORDER", payload: o }); api.orders.update(o.id, o as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteOrder(id); dispatch({ type: "DELETE_ORDER", payload: id }); api.orders.delete(id).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useInventoryActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "ADD_INVENTORY", payload: i }); }, [dispatch]),
-    update: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "UPDATE_INVENTORY", payload: i }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteInventoryItem(id); dispatch({ type: "DELETE_INVENTORY", payload: id }); }, [dispatch]),
+    add: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "ADD_INVENTORY", payload: i }); api.inventory.add(i as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (i: InventoryItem) => { await db.putInventoryItem(i); dispatch({ type: "UPDATE_INVENTORY", payload: i }); api.inventory.update(i.id, i as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteInventoryItem(id); dispatch({ type: "DELETE_INVENTORY", payload: id }); api.inventory.delete(id).catch(() => {}); }, [dispatch]),
   };
 }
 
 export function useExperimentDesignActions() {
   const { dispatch } = useStore();
   return {
-    add: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "ADD_EXPERIMENT_DESIGN", payload: d }); }, [dispatch]),
-    update: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "UPDATE_EXPERIMENT_DESIGN", payload: d }); }, [dispatch]),
-    remove: useCallback(async (id: string) => { await db.deleteExperimentDesign(id); dispatch({ type: "DELETE_EXPERIMENT_DESIGN", payload: id }); }, [dispatch]),
+    add: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "ADD_EXPERIMENT_DESIGN", payload: d }); api.experimentDesigns.add(d as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    update: useCallback(async (d: ExperimentDesign) => { await db.putExperimentDesign(d); dispatch({ type: "UPDATE_EXPERIMENT_DESIGN", payload: d }); api.experimentDesigns.update(d.id, d as unknown as Record<string, unknown>).catch(() => {}); }, [dispatch]),
+    remove: useCallback(async (id: string) => { await db.deleteExperimentDesign(id); dispatch({ type: "DELETE_EXPERIMENT_DESIGN", payload: id }); api.experimentDesigns.delete(id).catch(() => {}); }, [dispatch]),
   };
 }
 
