@@ -472,6 +472,9 @@ export default function Experiments() {
                                         <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
                                         {step.durationMinutes && <span className="step-meta">⏱ {step.durationMinutes} min</span>}
                                       </div>
+                                      <span className={`step-check ${step.completed ? "checked" : ""}`} aria-label={step.completed ? "Completed" : "Pending"}>
+                                        {step.completed ? "✓" : ""}
+                                      </span>
                                       <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>
                                         {step.completed ? "Completed" : "Pending"}
                                       </span>
@@ -777,9 +780,15 @@ export default function Experiments() {
                           {step.durationMinutes && <div style={{ fontSize: 9.5, color: "#78909C", fontWeight: 500 }}>⏱ {step.durationMinutes} min</div>}
                         </div>
                         {step.completed ? (
-                          <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid #0D9488", background: "#0D9488", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>✓</div>
+                            <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
+                          </div>
                         ) : (
-                          <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid #90A4AE", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}></div>
+                            <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
+                          </div>
                         )}
                       </div>
                       <p style={{ margin: "0 0 12px 46px", fontSize: 11, color: "#546E7A", lineHeight: 1.7 }}>{step.description}</p>
@@ -901,6 +910,9 @@ export default function Experiments() {
                         <strong style={{ fontSize: 13, color: "#263238" }}>{step.title}</strong>
                         {step.durationMinutes && <span className="step-meta">⏱ {step.durationMinutes} min</span>}
                       </div>
+                      <span className={`step-check ${step.completed ? "checked" : ""}`} aria-label={step.completed ? "Completed" : "Pending"}>
+                        {step.completed ? "✓" : ""}
+                      </span>
                       <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>{step.completed ? "Completed" : "Pending"}</span>
                     </div>
                     <div className="step-preview-body">

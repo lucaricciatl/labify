@@ -1104,6 +1104,27 @@ body { margin: 0; min-height: 100dvh; background: var(--bg); }
   color: #90A4AE;
 }
 
+/* Checkbox indicator shown in experiment step previews and PDFs */
+.step-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid #90A4AE;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: transparent;
+  background: #fff;
+}
+.step-check.checked {
+  background: #0D9488;
+  border-color: #0D9488;
+  color: #fff;
+}
+
 .step-safety {
   display: flex;
   align-items: center;
