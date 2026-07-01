@@ -458,6 +458,7 @@ export default function ExperimentDesigns() {
 
             {/* Header Card */}
             <div
+              data-pdf-section
               style={{
                 background: "#FFFFFF",
                 borderRadius: 12,
@@ -486,6 +487,7 @@ export default function ExperimentDesigns() {
             {/* Objective & Hypothesis */}
             {(printTarget.objective || printTarget.hypothesis) && (
               <div
+                data-pdf-section
                 style={{
                   background: "#FFFFFF",
                   borderRadius: 12,
@@ -511,11 +513,12 @@ export default function ExperimentDesigns() {
 
             {/* Steps */}
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14, paddingLeft: 4 }}>Procedure Steps</div>
+              <div data-pdf-section style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14, paddingLeft: 4 }}>Procedure Steps</div>
 
               {printTarget.steps.map((step, idx) => (
                 <div
                   key={step.id}
+                  data-pdf-section
                   style={{
                     background: "#FFFFFF",
                     borderRadius: 12,
@@ -523,6 +526,7 @@ export default function ExperimentDesigns() {
                     marginBottom: 16,
                     overflow: "hidden",
                     pageBreakInside: "avoid",
+                    breakInside: "avoid",
                   }}
                 >
                   <div style={{ padding: "20px 28px" }}>
@@ -595,6 +599,7 @@ export default function ExperimentDesigns() {
             {/* Conclusion */}
             {printTarget.conclusion && (
               <div
+                data-pdf-section
                 style={{
                   background: "#FFFFFF",
                   borderRadius: 12,
@@ -611,6 +616,7 @@ export default function ExperimentDesigns() {
 
             {/* Footer */}
             <div
+              data-pdf-section
               style={{
                 textAlign: "center",
                 paddingTop: 20,

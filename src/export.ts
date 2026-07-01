@@ -783,7 +783,97 @@ export async function downloadExperimentDesignWord(design: ExperimentDesign, _ex
 
 export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | null>, filename: string) {
   if (!printRef.current) return;
-  const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true });
+  const source = printRef.current;
+
+  // Find sections marked for atomic pagination.
+  const sections = Array.from(source.querySelectorAll<HTMLElement>("[data-pdf-section]"));
+  if (sections.length === 0) {
+    return legacyDownloadPDF(source, filename);
+  }
+
+  const sourceRect = source.getBoundingClientRect();
+  const sourceStyle = window.getComputedStyle(source);
+  const paddingTop = parseFloat(sourceStyle.paddingTop) || 0;
+  const paddingBottom = parseFloat(sourceStyle.paddingBottom) || 0;
+
+  // A4 with 10mm margins: the image occupies 190mm wide and 277mm tall.
+  const pdfImgWidthMm = 190;
+  const pdfUsableHeightMm = 277;
+  // Convert PDF height budget to source pixels using the same scale as the legacy export.
+  const maxTotalPageHeightPx = (pdfUsableHeightMm * sourceRect.width) / pdfImgWidthMm;
+  // Reserve the source padding plus a small safety margin for collapsed inter-section margins.
+  const safetyPx = 40;
+  const maxContentHeightPx = Math.max(100, maxTotalPageHeightPx - paddingTop - paddingBottom - safetyPx);
+
+  // Measure each section's footprint, including the gap to the following section.
+  const sectionInfos = sections.map((el, i) => {
+    const rect = el.getBoundingClientRect();
+    let footprint = rect.height;
+    if (i < sections.length - 1) {
+      const nextRect = sections[i + 1].getBoundingClientRect();
+      footprint += Math.max(0, nextRect.top - rect.bottom);
+    } else {
+      const marginBottom = parseFloat(window.getComputedStyle(el).marginBottom) || 0;
+      footprint += marginBottom;
+    }
+    return { el, footprint };
+  });
+
+  // Pack sections into pages without splitting any section.
+  const pages: number[][] = [];
+  let currentPage: number[] = [];
+  let currentHeight = 0;
+  for (let i = 0; i < sectionInfos.length; i++) {
+    const info = sectionInfos[i];
+    if (currentHeight + info.footprint > maxContentHeightPx && currentPage.length > 0) {
+      pages.push(currentPage);
+      currentPage = [];
+      currentHeight = 0;
+    }
+    currentPage.push(i);
+    currentHeight += info.footprint;
+  }
+  if (currentPage.length > 0) pages.push(currentPage);
+
+  const pdf = new jsPDF("p", "mm", "a4");
+
+  for (let p = 0; p < pages.length; p++) {
+    if (p > 0) pdf.addPage();
+
+    // Clone the whole source so styles, fonts and images stay intact,
+    // then hide every section that does not belong to this page.
+    const clone = source.cloneNode(true) as HTMLElement;
+    const cloneSections = Array.from(clone.querySelectorAll<HTMLElement>("[data-pdf-section]"));
+    for (let i = 0; i < cloneSections.length; i++) {
+      if (!pages[p].includes(i)) {
+        cloneSections[i].style.display = "none";
+      }
+    }
+
+    clone.style.position = "absolute";
+    clone.style.left = "-9999px";
+    clone.style.top = "0";
+    clone.style.width = `${sourceRect.width}px`;
+    clone.style.maxWidth = `${sourceRect.width}px`;
+    clone.style.overflow = "visible";
+    document.body.appendChild(clone);
+
+    // Allow fonts and images to settle before capturing.
+    await new Promise((r) => setTimeout(r, 200));
+    const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF", logging: false });
+    const imgData = canvas.toDataURL("image/png");
+    const imgWidth = 190;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
+    document.body.removeChild(clone);
+  }
+
+  pdf.save(filename);
+}
+
+async function legacyDownloadPDF(source: HTMLElement, filename: string): Promise<void> {
+  const canvas = await html2canvas(source, { scale: 2, useCORS: true });
   const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const imgWidth = 190;
