@@ -802,26 +802,34 @@ export default function Experiments() {
                         </div>
                       )}
                       {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 46, maxWidth: 320, maxHeight: 220, borderRadius: 8, border: "1px solid #ECEFF1", marginBottom: 12, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
-                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
-                        <div style={{ marginLeft: 46, background: "#FFFFFF", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
-                          <div style={{ padding: "10px 16px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>📝 Execution &amp; Deviation Record</div>
-                          <div style={{ padding: "14px 16px" }}>
-                            {step.actualResult && (
-                              <div style={{ marginBottom: 8 }}>
-                                <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
-                                <p style={{ margin: 0, fontSize: 11, color: "#5D4037" }}>{step.actualResult}</p>
-                              </div>
-                            )}
-                            {step.deviationNotes && (
-                              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#C62828", fontSize: 10, fontWeight: 600, marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderLeft: "3px solid #EF5350", borderRadius: "0 6px 6px 0" }}>
-                                <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
-                                <span>{step.deviationNotes}</span>
-                              </div>
-                            )}
-                            {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 280, maxHeight: 200, borderRadius: 8, border: "1px solid #E0E0E0", marginTop: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
-                          </div>
+                      <div style={{ marginLeft: 46, background: "#FFFFFF", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
+                        <div style={{ padding: "10px 16px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>📝 Execution &amp; Deviation Record</div>
+                        <div style={{ padding: "14px 16px" }}>
+                          {step.actualResult ? (
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
+                              <p style={{ margin: 0, fontSize: 11, color: "#5D4037" }}>{step.actualResult}</p>
+                            </div>
+                          ) : (
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
+                              <div className="handwriting-lines" style={{ minHeight: 60 }} />
+                            </div>
+                          )}
+                          {step.deviationNotes ? (
+                            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#C62828", fontSize: 10, fontWeight: 600, marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderLeft: "3px solid #EF5350", borderRadius: "0 6px 6px 0" }}>
+                              <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+                              <span>{step.deviationNotes}</span>
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: 8 }}>
+                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Deviation / Notes</div>
+                              <div className="handwriting-lines" style={{ minHeight: 60 }} />
+                            </div>
+                          )}
+                          {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 280, maxHeight: 200, borderRadius: 8, border: "1px solid #E0E0E0", marginTop: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}

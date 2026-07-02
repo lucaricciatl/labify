@@ -1125,6 +1125,17 @@ body { margin: 0; min-height: 100dvh; background: var(--bg); }
   color: #fff;
 }
 
+/* Dotted writing area for printed experiment reports */
+.handwriting-lines {
+  width: 100%;
+  background-image: radial-gradient(circle, #B0BEC5 1px, transparent 1px);
+  background-size: 12px 22px;
+  background-position: 0 4px;
+  border-radius: 6px;
+  min-height: 66px;
+  border: 1px dashed #CFD8DC;
+}
+
 .step-safety {
   display: flex;
   align-items: center;
