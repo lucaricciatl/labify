@@ -82,6 +82,8 @@ export interface DesignStep {
   safetyNotes?: string;
   expectedResult?: string;
   image?: string; // reference / planned image
+  materials: string[]; // material codes for this step
+  instruments: string[]; // instrument codes for this step
 }
 
 export interface ExperimentDesign {

@@ -4,6 +4,7 @@ import {
   Trash2,
   Plus,
   Search,
+  Copy,
   Image as ImageIcon,
   Clock,
   AlertTriangle,
@@ -34,6 +35,8 @@ function emptyStep(order: number): DesignStep {
     safetyNotes: "",
     expectedResult: "",
     image: "",
+    materials: [],
+    instruments: [],
   };
 }
 
@@ -51,6 +54,22 @@ function emptyDesign(): ExperimentDesign {
     createdAt: new Date().toISOString().slice(0, 10),
     updatedAt: new Date().toISOString().slice(0, 10),
   };
+}
+
+function deriveDesignMaterials(steps: DesignStep[]): string[] {
+  const set = new Set<string>();
+  for (const s of steps) {
+    for (const m of s.materials ?? []) set.add(m);
+  }
+  return Array.from(set);
+}
+
+function deriveDesignInstruments(steps: DesignStep[]): string[] {
+  const set = new Set<string>();
+  for (const s of steps) {
+    for (const i of s.instruments ?? []) set.add(i);
+  }
+  return Array.from(set);
 }
 
 function generateDesignId(designs: ExperimentDesign[]): string {
@@ -87,6 +106,27 @@ export default function ExperimentDesigns() {
     (items: Attachment[]) => setEditing((p) => p ? { ...p, attachments: items } : p)
   );
 
+  const duplicate = async (d: ExperimentDesign) => {
+    const nextId = generateDesignId(state.experimentDesigns);
+    const copied: ExperimentDesign = {
+      ...d,
+      id: nextId,
+      name: `${d.name} (Copy)`,
+      materials: [...d.materials],
+      instruments: [...d.instruments],
+      steps: d.steps.map((s) => ({
+        ...s,
+        id: generateId(),
+        materials: [...(s.materials ?? [])],
+        instruments: [...(s.instruments ?? [])],
+      })),
+      attachments: d.attachments?.map((a) => ({ ...a, id: generateId() })) ?? [],
+      createdAt: new Date().toISOString().slice(0, 10),
+      updatedAt: new Date().toISOString().slice(0, 10),
+    };
+    await actions.add(copied);
+  };
+
   const openAdd = () => {
     try {
       const nextId = generateDesignId(state.experimentDesigns);
@@ -103,7 +143,11 @@ export default function ExperimentDesigns() {
       ...d,
       materials: [...d.materials],
       instruments: [...d.instruments],
-      steps: d.steps.map((s) => ({ ...s })),
+      steps: d.steps.map((s) => ({
+        ...s,
+        materials: [...(s.materials ?? [])],
+        instruments: [...(s.instruments ?? [])],
+      })),
     });
     setModal(true);
   };
@@ -119,6 +163,8 @@ export default function ExperimentDesigns() {
       ...editing,
       updatedAt: new Date().toISOString().slice(0, 10),
       steps: editing.steps.map((s, i) => ({ ...s, order: i })),
+      materials: deriveDesignMaterials(editing.steps),
+      instruments: deriveDesignInstruments(editing.steps),
     };
     if (!d.name.trim()) {
       alert("Please enter a name for the design.");
@@ -173,6 +219,44 @@ export default function ExperimentDesigns() {
     const j = i + dir;
     if (j < 0 || j >= steps.length) return;
     [steps[i], steps[j]] = [steps[j], steps[i]];
+    setEditing({ ...editing, steps });
+  };
+
+  const addStepMaterial = (stepIdx: number, code: string) => {
+    if (!editing || !code) return;
+    const steps = [...editing.steps];
+    const step = { ...steps[stepIdx] };
+    if ((step.materials ?? []).includes(code)) return;
+    step.materials = [...(step.materials ?? []), code];
+    steps[stepIdx] = step;
+    setEditing({ ...editing, steps });
+  };
+
+  const removeStepMaterial = (stepIdx: number, matIdx: number) => {
+    if (!editing) return;
+    const steps = [...editing.steps];
+    const step = { ...steps[stepIdx] };
+    step.materials = (step.materials ?? []).filter((_, i) => i !== matIdx);
+    steps[stepIdx] = step;
+    setEditing({ ...editing, steps });
+  };
+
+  const addStepInstrument = (stepIdx: number, code: string) => {
+    if (!editing || !code) return;
+    const steps = [...editing.steps];
+    const step = { ...steps[stepIdx] };
+    if ((step.instruments ?? []).includes(code)) return;
+    step.instruments = [...(step.instruments ?? []), code];
+    steps[stepIdx] = step;
+    setEditing({ ...editing, steps });
+  };
+
+  const removeStepInstrument = (stepIdx: number, instIdx: number) => {
+    if (!editing) return;
+    const steps = [...editing.steps];
+    const step = { ...steps[stepIdx] };
+    step.instruments = (step.instruments ?? []).filter((_, i) => i !== instIdx);
+    steps[stepIdx] = step;
     setEditing({ ...editing, steps });
   };
 
@@ -257,6 +341,7 @@ export default function ExperimentDesigns() {
                     <td>{d.updatedAt || d.createdAt}</td>
                     <td className="actions">
                       <button className="icon-btn" title="Edit" onClick={() => openEdit(d)}><Pencil size={14} /></button>
+                      <button className="icon-btn" title="Duplicate" onClick={() => duplicate(d)}><Copy size={14} /></button>
                       <button className="icon-btn" title="Preview" onClick={() => openPreview(d)}><Eye size={14} /></button>
                       <button className="icon-btn" title="Export Word" onClick={() => exportWord(d)}><FileType2 size={14} /></button>
                       <button className="icon-btn" title="Export PDF" onClick={() => exportPdf(d)}><FileDown size={14} /></button>
@@ -291,6 +376,18 @@ export default function ExperimentDesigns() {
                                       <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                                     )}
                                     {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                                    {(step.materials?.length || step.instruments?.length) ? (
+                                      <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                                        {step.materials?.map((code) => {
+                                          const mat = state.materials.find((m) => m.code === code);
+                                          return <span key={code} style={{ fontSize: 10, background: "#E0F2F1", padding: "2px 8px", borderRadius: 10, color: "#0D9488" }}>{mat?.name || code}</span>;
+                                        })}
+                                        {step.instruments?.map((code) => {
+                                          const inst = state.instruments.find((i) => i.code === code);
+                                          return <span key={code} style={{ fontSize: 10, background: "#E3F2FD", padding: "2px 8px", borderRadius: 10, color: "#1565C0" }}>{inst?.name || code}</span>;
+                                        })}
+                                      </div>
+                                    ) : null}
                                   </div>
                                 </div>
                               ))}
@@ -374,19 +471,19 @@ export default function ExperimentDesigns() {
                   <div className="field" style={{ marginTop: 10 }}>
                     <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Materials</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                      {editing?.materials.map((code, mi) => {
+                      {(step.materials ?? []).map((code, mi) => {
                         const mat = state.materials.find((m) => m.code === code);
                         return (
                           <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
                             {mat?.name || code}
-                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => setEditing((p) => p ? { ...p, materials: p.materials.filter((_, idx) => idx !== mi) } : p)}><X size={10} /></button>
+                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepMaterial(i, mi)}><X size={10} /></button>
                           </span>
                         );
                       })}
                     </div>
-                    <select value="" onChange={(e) => { const code = e.target.value; if (code && !editing?.materials.includes(code)) setEditing((p) => p ? { ...p, materials: [...p.materials, code] } : p); }} style={{ marginTop: 6 }}>
+                    <select value="" onChange={(e) => addStepMaterial(i, e.target.value)} style={{ marginTop: 6 }}>
                       <option value="">+ Add material...</option>
-                      {state.materials.map((m) => (
+                      {state.materials.filter((m) => !(step.materials ?? []).includes(m.code)).map((m) => (
                         <option key={m.code} value={m.code}>{m.code} — {m.name}</option>
                       ))}
                     </select>
@@ -395,26 +492,51 @@ export default function ExperimentDesigns() {
                   <div className="field" style={{ marginTop: 10 }}>
                     <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Instruments</label>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                      {editing?.instruments.map((code, ii) => {
-                        const inst = state.instruments.find((i) => i.code === code);
+                      {(step.instruments ?? []).map((code, ii) => {
+                        const inst = state.instruments.find((inst) => inst.code === code);
                         return (
                           <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
                             {inst?.name || code}
-                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => setEditing((p) => p ? { ...p, instruments: p.instruments.filter((_, idx) => idx !== ii) } : p)}><X size={10} /></button>
+                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepInstrument(i, ii)}><X size={10} /></button>
                           </span>
                         );
                       })}
                     </div>
-                    <select value="" onChange={(e) => { const code = e.target.value; if (code && !editing?.instruments.includes(code)) setEditing((p) => p ? { ...p, instruments: [...p.instruments, code] } : p); }} style={{ marginTop: 6 }}>
+                    <select value="" onChange={(e) => addStepInstrument(i, e.target.value)} style={{ marginTop: 6 }}>
                       <option value="">+ Add instrument...</option>
-                      {state.instruments.map((i) => (
-                        <option key={i.code} value={i.code}>{i.code} — {i.name}</option>
+                      {state.instruments.filter((inst) => !(step.instruments ?? []).includes(inst.code)).map((inst) => (
+                        <option key={inst.code} value={inst.code}>{inst.code} — {inst.name}</option>
                       ))}
                     </select>
                   </div>
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="field">
+            <label style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Complete Materials & Instruments</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+              {deriveDesignMaterials(editing?.steps ?? []).map((code) => {
+                const mat = state.materials.find((m) => m.code === code);
+                return (
+                  <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                    {mat?.name || code}
+                  </span>
+                );
+              })}
+              {deriveDesignInstruments(editing?.steps ?? []).map((code) => {
+                const inst = state.instruments.find((i) => i.code === code);
+                return (
+                  <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E3F2FD", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#1565C0" }}>
+                    {inst?.name || code}
+                  </span>
+                );
+              })}
+            </div>
+            {(deriveDesignMaterials(editing?.steps ?? []).length === 0 && deriveDesignInstruments(editing?.steps ?? []).length === 0) && (
+              <div style={{ fontSize: 12, color: "#78909C", marginTop: 4 }}>Add materials and instruments to individual steps to build the complete list.</div>
+            )}
           </div>
 
           <div className="field"><label>Expected Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="What conclusion do you expect from this experiment?" /></div>
@@ -683,6 +805,18 @@ export default function ExperimentDesigns() {
                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                       )}
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {(step.materials?.length || step.instruments?.length) ? (
+                        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {step.materials?.map((code) => {
+                            const mat = state.materials.find((m) => m.code === code);
+                            return <span key={code} style={{ fontSize: 10, background: "#E0F2F1", padding: "2px 8px", borderRadius: 10, color: "#0D9488" }}>{mat?.name || code}</span>;
+                          })}
+                          {step.instruments?.map((code) => {
+                            const inst = state.instruments.find((i) => i.code === code);
+                            return <span key={code} style={{ fontSize: 10, background: "#E3F2FD", padding: "2px 8px", borderRadius: 10, color: "#1565C0" }}>{inst?.name || code}</span>;
+                          })}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ))}
