@@ -100,7 +100,7 @@ export default function ExperimentDesigns() {
   const [printTarget, setPrintTarget] = useState<ExperimentDesign | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [activeImageStep, setActiveImageStep] = useState<{ idx: number; type: "planned" | "actual" } | null>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "steps">("overview");
   const { fileRef: attachFileRef, addFile, removeFile } = useAttachmentHelpers(
     editing?.attachments || [],
     (items: Attachment[]) => setEditing((p) => p ? { ...p, attachments: items } : p)
@@ -128,6 +128,7 @@ export default function ExperimentDesigns() {
   };
 
   const openAdd = () => {
+    setActiveTab("overview");
     try {
       const nextId = generateDesignId(state.experimentDesigns);
       setEditing({ ...emptyDesign(), id: nextId });
@@ -139,6 +140,7 @@ export default function ExperimentDesigns() {
   };
 
   const openEdit = (d: ExperimentDesign) => {
+    setActiveTab("overview");
     setEditing({
       ...d,
       materials: [...d.materials],
@@ -414,20 +416,78 @@ export default function ExperimentDesigns() {
 
       <Modal open={modal} onClose={() => setModal(false)} title={state.experimentDesigns.find((x) => x.id === editing?.id) ? "Edit Design" : "New Experiment Design"}>
         <div className="form">
-          <div className="field"><label>Design ID</label><input value={editing?.id || ""} readOnly className="mono-input" /></div>
-          <div className="field"><label>Name</label><input value={editing?.name || ""} onChange={(e) => setEditing((p) => p ? { ...p, name: e.target.value } : p)} placeholder="e.g. Ti3C2Tx MXene Device Fabrication Protocol" /></div>
-          <div className="field"><label>Objective</label><textarea value={editing?.objective || ""} onChange={(e) => setEditing((p) => p ? { ...p, objective: e.target.value } : p)} rows={2} placeholder="What is the goal of this experiment?" /></div>
-          <div className="field"><label>Hypothesis</label><textarea value={editing?.hypothesis || ""} onChange={(e) => setEditing((p) => p ? { ...p, hypothesis: e.target.value } : p)} rows={2} placeholder="What do you expect to observe?" /></div>
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "2px solid #E0E0E0", paddingBottom: 8 }}>
+            <button
+              type="button"
+              className={activeTab === "overview" ? "btn-primary" : "btn-ghost"}
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
+              onClick={() => setActiveTab("overview")}
+            >
+              Overview
+            </button>
+            <button
+              type="button"
+              className={activeTab === "steps" ? "btn-primary" : "btn-ghost"}
+              style={{ fontSize: "0.8rem", padding: "0.35rem 0.75rem" }}
+              onClick={() => setActiveTab("steps")}
+            >
+              Steps ({editing?.steps.length ?? 0})
+            </button>
+          </div>
 
-          <div className="field">
-            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span>Steps</span>
-              <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }} onClick={addStep}>
-                <Plus size={12} /> Add step
-              </button>
-            </label>
-            <div className="sub-form-list procedure-steps">
-              {editing?.steps.map((step, i) => (
+          {activeTab === "overview" && (
+            <>
+              <div className="field"><label>Design ID</label><input value={editing?.id || ""} readOnly className="mono-input" /></div>
+              <div className="field"><label>Name</label><input value={editing?.name || ""} onChange={(e) => setEditing((p) => p ? { ...p, name: e.target.value } : p)} placeholder="e.g. Ti3C2Tx MXene Device Fabrication Protocol" /></div>
+              <div className="field"><label>Objective</label><textarea value={editing?.objective || ""} onChange={(e) => setEditing((p) => p ? { ...p, objective: e.target.value } : p)} rows={2} placeholder="What is the goal of this experiment?" /></div>
+              <div className="field"><label>Hypothesis</label><textarea value={editing?.hypothesis || ""} onChange={(e) => setEditing((p) => p ? { ...p, hypothesis: e.target.value } : p)} rows={2} placeholder="What do you expect to observe?" /></div>
+
+              <div className="field">
+                <label style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Complete Materials &amp; Instruments</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                  {deriveDesignMaterials(editing?.steps ?? []).map((code) => {
+                    const mat = state.materials.find((m) => m.code === code);
+                    return (
+                      <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                        {mat?.name || code}
+                      </span>
+                    );
+                  })}
+                  {deriveDesignInstruments(editing?.steps ?? []).map((code) => {
+                    const inst = state.instruments.find((i) => i.code === code);
+                    return (
+                      <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E3F2FD", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#1565C0" }}>
+                        {inst?.name || code}
+                      </span>
+                    );
+                  })}
+                </div>
+                {(deriveDesignMaterials(editing?.steps ?? []).length === 0 && deriveDesignInstruments(editing?.steps ?? []).length === 0) && (
+                  <div style={{ fontSize: 12, color: "#78909C", marginTop: 4 }}>Add materials and instruments in the Steps tab to build the complete list.</div>
+                )}
+              </div>
+
+              <div className="field"><label>Expected Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="What conclusion do you expect from this experiment?" /></div>
+
+              <div className="field">
+                <label>Documents &amp; Attachments</label>
+                <AttachmentList items={editing?.attachments} onRemove={removeFile} editable />
+                <AttachmentUploader fileRef={attachFileRef} onChange={addFile} label="Add document" />
+              </div>
+            </>
+          )}
+
+          {activeTab === "steps" && (
+            <div className="field">
+              <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>Steps</span>
+                <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }} onClick={addStep}>
+                  <Plus size={12} /> Add step
+                </button>
+              </label>
+              <div className="sub-form-list procedure-steps">
+                {editing?.steps.map((step, i) => (
                 <div className="step-card" key={step.id}>
                   <div className="step-card-header">
                     <span className="step-number">{i + 1}</span>
@@ -513,39 +573,7 @@ export default function ExperimentDesigns() {
               ))}
             </div>
           </div>
-
-          <div className="field">
-            <label style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Complete Materials & Instruments</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {deriveDesignMaterials(editing?.steps ?? []).map((code) => {
-                const mat = state.materials.find((m) => m.code === code);
-                return (
-                  <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
-                    {mat?.name || code}
-                  </span>
-                );
-              })}
-              {deriveDesignInstruments(editing?.steps ?? []).map((code) => {
-                const inst = state.instruments.find((i) => i.code === code);
-                return (
-                  <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E3F2FD", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#1565C0" }}>
-                    {inst?.name || code}
-                  </span>
-                );
-              })}
-            </div>
-            {(deriveDesignMaterials(editing?.steps ?? []).length === 0 && deriveDesignInstruments(editing?.steps ?? []).length === 0) && (
-              <div style={{ fontSize: 12, color: "#78909C", marginTop: 4 }}>Add materials and instruments to individual steps to build the complete list.</div>
-            )}
-          </div>
-
-          <div className="field"><label>Expected Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="What conclusion do you expect from this experiment?" /></div>
-
-          <div className="field">
-            <label>Documents & Attachments</label>
-            <AttachmentList items={editing?.attachments} onRemove={removeFile} editable />
-            <AttachmentUploader fileRef={attachFileRef} onChange={addFile} label="Add document" />
-          </div>
+          )}
 
           <div className="form-actions">
             <button className="btn-primary" onClick={save}>Save</button>
