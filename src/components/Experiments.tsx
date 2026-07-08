@@ -801,7 +801,7 @@ export default function Experiments() {
             )}
 
             {/* Procedure Steps */}
-            <div data-pdf-section style={{ marginTop: 20, marginBottom: 8 }}>
+            <div style={{ marginTop: 20, marginBottom: 8 }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: "#0D9488", marginBottom: 12 }}>Procedure Steps — Execution Record</div>
 
               {printTarget.steps.map((step, idx) => (

@@ -859,8 +859,8 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
     document.body.appendChild(clone);
 
     // Allow fonts and images to settle before capturing.
-    await new Promise((r) => setTimeout(r, 200));
-    const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#FFFFFF", logging: false });
+    await new Promise((r) => setTimeout(r, 400));
+    const canvas = await html2canvas(clone, { scale: 3, useCORS: true, backgroundColor: "#FFFFFF", logging: false });
     const imgData = canvas.toDataURL("image/png");
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -873,7 +873,7 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
 }
 
 async function legacyDownloadPDF(source: HTMLElement, filename: string): Promise<void> {
-  const canvas = await html2canvas(source, { scale: 2, useCORS: true });
+  const canvas = await html2canvas(source, { scale: 3, useCORS: true });
   const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const imgWidth = 190;
