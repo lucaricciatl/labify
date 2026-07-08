@@ -709,144 +709,167 @@ export default function Experiments() {
         }
       }} />
 
-      {/* Hidden print target for PDF — Material Design + Montserrat */}
+      {/* Hidden print target for PDF — ReportLab-style clean layout */}
       {printTarget && (
-        <div style={{ position: "absolute", left: "-9999px", top: 0, width: 794 }}>
-          <div ref={printRef} style={{ fontFamily: "'Montserrat', 'Segoe UI', system-ui, sans-serif", background: "#FFFFFF", padding: 40, width: 794, color: "#263238" }}>
-            <style>{"@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');"}</style>
-            {/* Header */}
-            <div data-pdf-section style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "24px 32px", marginBottom: 24 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#0D9488", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 6 }}>Experiment Execution Report</div>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#1a1a1a", letterSpacing: "-0.5px" }}>{printTarget.name}</h1>
-              <div style={{ marginTop: 12, display: "flex", gap: 24, flexWrap: "wrap" }}>
-                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>ID</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.id}</div></div>
-                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Start</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.startingDate || "—"}</div></div>
-                <div><span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>End</span><div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{printTarget.endingDate || "—"}</div></div>
+        <div style={{ position: "absolute", left: "-9999px", top: 0, width: 595 }}>
+          <div
+            ref={printRef}
+            style={{
+              width: 595,
+              padding: "48px 56px",
+              background: "#FFFFFF",
+              color: "#000000",
+              fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+              fontSize: 10,
+              lineHeight: 1.5,
+            }}
+          >
+            {/* Report header */}
+            <div data-pdf-section style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "1.2px", textTransform: "uppercase", color: "#333", marginBottom: 4 }}>
+                Experiment Execution Report
+              </div>
+              <h1 style={{ margin: "0 0 8px 0", fontSize: 18, fontWeight: 700, color: "#000" }}>{printTarget.name}</h1>
+              <div style={{ display: "flex", gap: 24, flexWrap: "wrap", fontSize: 9, marginBottom: 16 }}>
+                <div><span style={{ fontWeight: 700 }}>ID</span><div>{printTarget.id}</div></div>
+                <div><span style={{ fontWeight: 700 }}>Start</span><div>{printTarget.startingDate || "—"}</div></div>
+                <div><span style={{ fontWeight: 700 }}>End</span><div>{printTarget.endingDate || "—"}</div></div>
                 {printTarget.designId && (
-                  <div>
-                    <span style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Protocol</span>
-                    <div style={{ fontSize: 11, fontWeight: 500, color: "#455A64", marginTop: 2 }}>{state.experimentDesigns.find((d) => d.id === printTarget.designId)?.name || printTarget.designId}</div>
-                  </div>
+                  <div><span style={{ fontWeight: 700 }}>Protocol</span><div>{state.experimentDesigns.find((d) => d.id === printTarget.designId)?.name || printTarget.designId}</div></div>
                 )}
               </div>
             </div>
 
-            {/* Materials & Instruments */}
-            {(printTarget.materials.length > 0 || printTarget.instruments.length > 0) && (
-              <div data-pdf-section style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
-                {printTarget.materials.length > 0 && (
-                  <div style={{ flex: 1, minWidth: 280, background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "20px 24px" }}>
-                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Materials Used</div>
-                    {printTarget.materials.map((em, idx) => {
+            {/* Materials table */}
+            {printTarget.materials.length > 0 && (
+              <div data-pdf-section style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 6 }}>Materials Used</div>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1.5px solid #000" }}>
+                      {["Code", "Name", "Qty Needed", "Unit"].map((h) => (
+                        <th key={h} style={{ textAlign: "left", padding: "3px 6px", fontWeight: 700, textTransform: "uppercase", fontSize: 8, letterSpacing: "0.5px" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printTarget.materials.map((em) => {
                       const mat = state.materials.find((m) => m.code === em.materialCode);
                       return (
-                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, padding: "6px 0", borderBottom: idx < printTarget.materials.length - 1 ? "1px solid #ECEFF1" : "none" }}>
-                          <span>{mat?.name || em.materialCode}</span>
-                          <span style={{ color: "#78909C" }}>{em.quantityNeeded} {em.unit || mat?.unit || ""}</span>
-                        </div>
+                        <tr key={em.materialCode} style={{ borderBottom: "1px solid #ccc" }}>
+                          <td style={{ padding: "3px 6px", fontFamily: "monospace", fontSize: 9 }}>{em.materialCode}</td>
+                          <td style={{ padding: "3px 6px" }}>{mat?.name || "—"}</td>
+                          <td style={{ padding: "3px 6px" }}>{em.quantityNeeded}</td>
+                          <td style={{ padding: "3px 6px" }}>{em.unit || mat?.unit || ""}</td>
+                        </tr>
                       );
                     })}
-                  </div>
-                )}
-                {printTarget.instruments.length > 0 && (
-                  <div style={{ flex: 1, minWidth: 280, background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "20px 24px" }}>
-                    <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 10 }}>Instruments Used</div>
-                    {printTarget.instruments.map((ei, idx) => {
-                      const inst = state.instruments.find((i) => i.code === ei.instrumentCode);
-                      return (
-                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, padding: "6px 0", borderBottom: idx < printTarget.instruments.length - 1 ? "1px solid #ECEFF1" : "none" }}>
-                          <span>{inst?.name || ei.instrumentCode}</span>
-                          <span style={{ color: "#78909C" }}>Qty: {ei.quantityNeeded}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  </tbody>
+                </table>
               </div>
             )}
 
-            {/* Steps */}
-            {printTarget.steps.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div data-pdf-section style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 14 }}>Procedure Steps — Execution Record</div>
-                {printTarget.steps.map((step, idx) => (
-                  <div key={step.id} data-pdf-section style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", marginBottom: 16, overflow: "hidden", pageBreakInside: "avoid", breakInside: "avoid" }}>
-                    <div style={{ height: 4, background: step.completed ? "#0D9488" : "#CFD8DC" }} />
-                    <div style={{ padding: "20px 28px" }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 12 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: step.completed ? "#0D9488" : "#ECEFF1", color: step.completed ? "#fff" : "#78909C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{idx + 1}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 600, color: "#263238", marginBottom: 2 }}>{step.title}</div>
-                          {step.durationMinutes && <div style={{ fontSize: 9.5, color: "#78909C", fontWeight: 500 }}>⏱ {step.durationMinutes} min</div>}
-                        </div>
-                        {step.completed ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid #0D9488", background: "#0D9488", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>✓</div>
-                            <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</div>
-                          </div>
-                        ) : (
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid #90A4AE", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}></div>
-                            <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, background: "#ECEFF1", padding: "4px 10px", borderRadius: 12, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</div>
-                          </div>
-                        )}
-                      </div>
-                      <p style={{ margin: "0 0 12px 46px", fontSize: 11, color: "#546E7A", lineHeight: 1.7 }}>{step.description}</p>
-                      {step.safetyNotes && (
-                        <div style={{ margin: "0 0 12px 46px", background: "#FFF3E0", borderLeft: "3px solid #FF9800", padding: "8px 14px", borderRadius: "0 8px 8px 0", fontSize: 10, color: "#E65100", fontWeight: 500 }}>⚠️ {step.safetyNotes}</div>
-                      )}
-                      {step.expectedResult && (
-                        <div style={{ margin: "0 0 12px 46px" }}>
-                          <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 4 }}>Expected Result</div>
-                          <p style={{ margin: 0, fontSize: 11, color: "#455A64", fontWeight: 500 }}>{step.expectedResult}</p>
-                        </div>
-                      )}
-                      {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 46, maxWidth: 320, maxHeight: 220, borderRadius: 8, border: "1px solid #ECEFF1", marginBottom: 12, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
-                      <div style={{ marginLeft: 46, background: "#FFFFFF", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
-                        <div style={{ padding: "10px 16px", background: "#F5F5F5", borderBottom: "1px solid #E0E0E0", fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px" }}>📝 Execution &amp; Deviation Record</div>
-                        <div style={{ padding: "14px 16px" }}>
-                          {step.actualResult ? (
-                            <div style={{ marginBottom: 8 }}>
-                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
-                              <p style={{ margin: 0, fontSize: 11, color: "#5D4037" }}>{step.actualResult}</p>
-                            </div>
-                          ) : (
-                            <div style={{ marginBottom: 8 }}>
-                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Actual Result</div>
-                              <div className="handwriting-lines" style={{ minHeight: 60 }} />
-                            </div>
-                          )}
-                          {step.deviationNotes ? (
-                            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, color: "#C62828", fontSize: 10, fontWeight: 600, marginTop: 8, padding: "8px 12px", background: "#FFEBEE", borderLeft: "3px solid #EF5350", borderRadius: "0 6px 6px 0" }}>
-                              <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
-                              <span>{step.deviationNotes}</span>
-                            </div>
-                          ) : (
-                            <div style={{ marginTop: 8 }}>
-                              <div style={{ fontSize: 9, color: "#78909C", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Deviation / Notes</div>
-                              <div className="handwriting-lines" style={{ minHeight: 60 }} />
-                            </div>
-                          )}
-                          {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 280, maxHeight: 200, borderRadius: 8, border: "1px solid #E0E0E0", marginTop: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.06)" }} />}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {/* Instruments table */}
+            {printTarget.instruments.length > 0 && (
+              <div data-pdf-section style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 6 }}>Instruments Used</div>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1.5px solid #000" }}>
+                      {["Code", "Name", "Qty Needed"].map((h) => (
+                        <th key={h} style={{ textAlign: "left", padding: "3px 6px", fontWeight: 700, textTransform: "uppercase", fontSize: 8, letterSpacing: "0.5px" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printTarget.instruments.map((ei) => {
+                      const inst = state.instruments.find((i) => i.code === ei.instrumentCode);
+                      return (
+                        <tr key={ei.instrumentCode} style={{ borderBottom: "1px solid #ccc" }}>
+                          <td style={{ padding: "3px 6px", fontFamily: "monospace", fontSize: 9 }}>{ei.instrumentCode}</td>
+                          <td style={{ padding: "3px 6px" }}>{inst?.name || "—"}</td>
+                          <td style={{ padding: "3px 6px" }}>{ei.quantityNeeded}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
+
+            {/* Procedure Steps */}
+            <div data-pdf-section style={{ marginTop: 24, marginBottom: 8 }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 10 }}>Procedure Steps — Execution Record</div>
+
+              {printTarget.steps.map((step, idx) => (
+                <div
+                  key={step.id}
+                  data-pdf-section
+                  style={{
+                    marginBottom: 14,
+                    pageBreakInside: "avoid",
+                    breakInside: "avoid",
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 3 }}>
+                    {idx + 1} {step.title}
+                    {step.completed && <span style={{ fontWeight: 700, color: "#0D9488", marginLeft: 8 }}>[COMPLETED]</span>}
+                    {!step.completed && <span style={{ fontWeight: 700, color: "#999", marginLeft: 8 }}>[PENDING]</span>}
+                  </div>
+                  {step.durationMinutes && (
+                    <div style={{ fontSize: 9, color: "#555", marginBottom: 4 }}>Duration: {step.durationMinutes} min</div>
+                  )}
+                  <p style={{ margin: "0 0 6px 0", fontSize: 10, lineHeight: 1.55 }}>{step.description}</p>
+
+                  {step.safetyNotes && (
+                    <div style={{ fontSize: 9, marginBottom: 4 }}><span style={{ fontWeight: 700 }}>⚠ {step.safetyNotes}</span></div>
+                  )}
+
+                  {step.expectedResult && (
+                    <div style={{ fontSize: 9, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700 }}>Expected result:</span> {step.expectedResult}
+                    </div>
+                  )}
+
+                  {step.image && <img src={step.image} alt="planned" style={{ maxWidth: 320, maxHeight: 220, marginBottom: 8, border: "1px solid #ccc" }} />}
+
+                  {/* Execution record */}
+                  <div style={{ marginTop: 8, padding: "8px 12px", background: "#f8f8f8", borderLeft: "3px solid #666" }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 4 }}>Execution &amp; Deviation Record</div>
+                    {step.actualResult ? (
+                      <div style={{ fontSize: 9, marginBottom: 4 }}><span style={{ fontWeight: 700 }}>Actual result:</span> {step.actualResult}</div>
+                    ) : (
+                      <div style={{ fontSize: 9, color: "#999", marginBottom: 4 }}>Actual result: —</div>
+                    )}
+                    {step.deviationNotes && (
+                      <div style={{ fontSize: 9, marginBottom: 4, color: "#C62828" }}><span style={{ fontWeight: 700 }}>Deviation / Notes:</span> {step.deviationNotes}</div>
+                    )}
+                    {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 280, maxHeight: 200, border: "1px solid #ccc", marginTop: 4 }} />}
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {/* Conclusion */}
             {printTarget.conclusion && (
-              <div data-pdf-section style={{ background: "#FFFFFF", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)", padding: "24px 32px", marginBottom: 24, borderLeft: "4px solid #0D9488" }}>
-                <div style={{ fontSize: 9, color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Conclusion</div>
-                <p style={{ margin: 0, fontSize: 11.5, color: "#37474F", lineHeight: 1.7 }}>{printTarget.conclusion}</p>
+              <div data-pdf-section style={{ marginTop: 20, marginBottom: 16 }}>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 6 }}>Conclusion</div>
+                <p style={{ margin: 0, fontSize: 10, lineHeight: 1.6 }}>{printTarget.conclusion}</p>
               </div>
             )}
 
             {/* Footer */}
-            <div data-pdf-section style={{ textAlign: "center", paddingTop: 20, borderTop: "1px solid #ECEFF1", fontSize: 9, color: "#90A4AE", fontWeight: 500, letterSpacing: "0.5px" }}>
-              Generated by Labify on {new Date().toLocaleDateString()} · {printTarget.steps.filter((s) => s.completed).length} of {printTarget.steps.length} steps completed
+            <div
+              data-pdf-section
+              style={{
+                textAlign: "center",
+                paddingTop: 16,
+                borderTop: "1px solid #ccc",
+                fontSize: 8,
+                color: "#666",
+              }}
+            >
+              Generated from Labify experiment execution API · {printTarget.id} · {printTarget.steps.filter((s) => s.completed).length} of {printTarget.steps.length} steps completed
             </div>
           </div>
         </div>
