@@ -5,7 +5,6 @@ import {
   Plus,
   Search,
   Copy,
-  Image as ImageIcon,
   Clock,
   AlertTriangle,
   ArrowUp,
