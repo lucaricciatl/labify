@@ -101,6 +101,7 @@ export default function ExperimentDesigns() {
   const printRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "steps">("overview");
+  const [activeImageStep, setActiveImageStep] = useState<{ idx: number; type: "planned" | "actual" } | null>(null);
   const { fileRef: attachFileRef, addFile, removeFile } = useAttachmentHelpers(
     editing?.attachments || [],
     (items: Attachment[]) => setEditing((p) => p ? { ...p, attachments: items } : p)
