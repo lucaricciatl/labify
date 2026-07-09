@@ -204,6 +204,7 @@ export default function Experiments() {
       safetyNotes: s.safetyNotes,
       expectedResult: s.expectedResult,
       image: s.image,
+      images: s.images ?? (s.image ? [s.image] : []),
       actualResult: "",
       deviationNotes: "",
       actualImage: "",
@@ -485,6 +486,7 @@ export default function Experiments() {
                                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                                       )}
                                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                                      {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
                                       {(step.actualResult || step.deviationNotes || step.actualImage) && (
                                         <div className="step-actual-box">
                                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
@@ -845,6 +847,9 @@ export default function Experiments() {
                   )}
 
                   {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />}
+                  {(step.images ?? []).map((img, imgIdx) => (
+                    <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />
+                  ))}
 
                   {/* Execution record */}
                   <div style={{ marginTop: 10, marginLeft: 30, padding: "8px 12px", background: "#fff", border: "1px solid #E0E0E0", borderLeft: "3px solid #0D9488", borderRadius: "0 6px 6px 0" }}>
@@ -968,6 +973,7 @@ export default function Experiments() {
                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                       )}
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
                       {(step.actualResult || step.deviationNotes || step.actualImage) && (
                         <div className="step-actual-box">
                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>

@@ -81,7 +81,8 @@ export interface DesignStep {
   durationMinutes?: number;
   safetyNotes?: string;
   expectedResult?: string;
-  image?: string; // reference / planned image
+  image?: string; // legacy: reference / planned image
+  images: string[]; // planned reference images
   materials: string[]; // material codes for this step
   instruments: string[]; // instrument codes for this step
 }
@@ -109,7 +110,8 @@ export interface ExperimentStep {
   durationMinutes?: number; // planned
   safetyNotes?: string; // planned
   expectedResult?: string; // planned
-  image?: string; // planned reference image
+  image?: string; // planned reference image (legacy)
+  images?: string[]; // planned reference images
   actualResult?: string; // actual observed result
   deviationNotes?: string; // deviation from plan
   actualImage?: string; // actual photo

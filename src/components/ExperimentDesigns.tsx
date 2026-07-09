@@ -35,6 +35,7 @@ function emptyStep(order: number): DesignStep {
     safetyNotes: "",
     expectedResult: "",
     image: "",
+    images: [],
     materials: [],
     instruments: [],
   };
@@ -102,6 +103,7 @@ export default function ExperimentDesigns() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "steps">("overview");
   const [activeImageStep, setActiveImageStep] = useState<{ idx: number; type: "planned" | "actual" } | null>(null);
+  const [editingStepIdx, setEditingStepIdx] = useState<number | null>(null);
   const { fileRef: attachFileRef, addFile, removeFile } = useAttachmentHelpers(
     editing?.attachments || [],
     (items: Attachment[]) => setEditing((p) => p ? { ...p, attachments: items } : p)
@@ -141,6 +143,7 @@ export default function ExperimentDesigns() {
   };
 
   const openEdit = (d: ExperimentDesign) => {
+    setEditingStepIdx(null);
     setActiveTab("overview");
     setEditing({
       ...d,
@@ -150,6 +153,7 @@ export default function ExperimentDesigns() {
         ...s,
         materials: [...(s.materials ?? [])],
         instruments: [...(s.instruments ?? [])],
+        images: s.images?.length ? [...s.images] : s.image ? [s.image] : [],
       })),
     });
     setModal(true);
@@ -264,13 +268,30 @@ export default function ExperimentDesigns() {
   };
 
   const onImageChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateStep(i, { image: reader.result as string });
-    };
-    reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const steps = [...(editing?.steps ?? [])];
+    const newImages: string[] = [];
+    let loaded = 0;
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        newImages.push(reader.result as string);
+        loaded++;
+        if (loaded === files.length) {
+          steps[i] = { ...steps[i], images: [...(steps[i].images ?? []), ...newImages] };
+          setEditing((p) => p ? { ...p, steps } : p);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeStepImage = (stepIdx: number, imgIdx: number) => {
+    if (!editing) return;
+    const steps = [...editing.steps];
+    steps[stepIdx] = { ...steps[stepIdx], images: (steps[stepIdx].images ?? []).filter((_, i) => i !== imgIdx) };
+    setEditing({ ...editing, steps });
   };
 
   const exportWord = async (d: ExperimentDesign) => {
@@ -379,6 +400,9 @@ export default function ExperimentDesigns() {
                                       <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                                     )}
                                     {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                                    {(step.images ?? []).map((img, imgIdx) => (
+                                      <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />
+                                    ))}
                                     {(step.materials?.length || step.instruments?.length) ? (
                                       <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
                                         {step.materials?.map((code) => {
@@ -483,97 +507,175 @@ export default function ExperimentDesigns() {
             <div className="field">
               <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span>Steps</span>
-                <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }} onClick={addStep}>
+                <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }} onClick={() => { addStep(); setEditingStepIdx((editing?.steps.length ?? 0)); }}>
                   <Plus size={12} /> Add step
                 </button>
               </label>
-              <div className="sub-form-list procedure-steps">
-                {editing?.steps.map((step, i) => (
-                <div className="step-card" key={step.id}>
-                  <div className="step-card-header">
-                    <span className="step-number">{i + 1}</span>
-                    <div className="step-move-btns">
-                      <button className="icon-btn" disabled={i === 0} onClick={() => moveStep(i, -1)}><ArrowUp size={12} /></button>
-                      <button className="icon-btn" disabled={i === (editing?.steps.length ?? 0) - 1} onClick={() => moveStep(i, 1)}><ArrowDown size={12} /></button>
-                    </div>
-                    <button className="icon-btn danger" onClick={() => removeStep(i)}><Trash2 size={12} /></button>
-                  </div>
-                  <input placeholder="Step title" value={step.title} onChange={(e) => updateStep(i, { title: e.target.value })} style={{ marginBottom: 6 }} />
-                  <textarea placeholder="Description" value={step.description} onChange={(e) => updateStep(i, { description: e.target.value })} rows={2} style={{ marginBottom: 6 }} />
-                  <div className="row" style={{ gap: "0.5rem" }}>
-                    <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-                      <input type="number" min={0} placeholder="Duration (min)" value={step.durationMinutes ?? ""} onChange={(e) => updateStep(i, { durationMinutes: e.target.value ? parseInt(e.target.value) : undefined })} />
-                    </div>
-                    <div className="field" style={{ flex: 2, marginBottom: 0 }}>
-                      <input placeholder="Safety notes" value={step.safetyNotes || ""} onChange={(e) => updateStep(i, { safetyNotes: e.target.value })} />
-                    </div>
-                  </div>
-                  <input placeholder="Expected result" value={step.expectedResult || ""} onChange={(e) => updateStep(i, { expectedResult: e.target.value })} style={{ marginTop: 6 }} />
 
-                  {/* Planned image */}
-                  <div className="field" style={{ marginTop: 8, marginBottom: 0 }}>
-                    <label style={{ fontSize: "11px" }}>Planned / Reference Image</label>
-                    <div className="image-upload" style={{ gap: "0.5rem" }}>
-                      {step.image ? (
-                        <div style={{ position: "relative" }}>
-                          <img src={step.image} alt="planned" className="image-preview" style={{ maxHeight: 100 }} />
-                          <button className="icon-btn danger" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }} onClick={() => updateStep(i, { image: "" })}><X size={12} color="#fff" /></button>
+              {editingStepIdx === null && (
+                <div className="sub-form-list">
+                  {editing?.steps.length === 0 && (
+                    <div style={{ fontSize: 12, color: "#78909C", padding: "12px 0" }}>No steps yet. Click "Add step" to create one.</div>
+                  )}
+                  {editing?.steps.map((step, i) => (
+                    <div
+                      key={step.id}
+                      onClick={() => setEditingStepIdx(i)}
+                      style={{
+                        cursor: "pointer",
+                        padding: "10px 14px",
+                        background: "#FAFAFA",
+                        borderRadius: 8,
+                        borderLeft: "3px solid #0D9488",
+                        marginBottom: 8,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#0D9488", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#263238", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{step.title || "Untitled step"}</div>
+                        <div style={{ fontSize: 11, color: "#78909C", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                          {step.durationMinutes && <span>⏱ {step.durationMinutes} min</span>}
+                          {(step.images ?? []).length > 0 && <span>🖼 {(step.images ?? []).length}</span>}
+                          {(step.materials ?? []).length > 0 && <span>🧪 {(step.materials ?? []).length}</span>}
+                          {(step.instruments ?? []).length > 0 && <span>🔬 {(step.instruments ?? []).length}</span>}
                         </div>
-                      ) : (
-                        <div className="image-preview-placeholder"><ImageIcon size={20} /></div>
-                      )}
-                      <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => { setActiveImageStep({ idx: i, type: "planned" }); fileRef.current?.click(); }}>
-                        {step.image ? "Change" : "Upload"}
+                        {step.description && (
+                          <div style={{ fontSize: 11, color: "#546E7A", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{step.description}</div>
+                        )}
+                      </div>
+                      <button
+                        className="icon-btn danger"
+                        style={{ flexShrink: 0 }}
+                        onClick={(e) => { e.stopPropagation(); removeStep(i); }}
+                        title="Delete step"
+                      >
+                        <Trash2 size={12} />
                       </button>
                     </div>
-                  </div>
-
-                  {/* Materials & Instruments lists */}
-                  <div className="field" style={{ marginTop: 10 }}>
-                    <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Materials</label>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                      {(step.materials ?? []).map((code, mi) => {
-                        const mat = state.materials.find((m) => m.code === code);
-                        return (
-                          <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
-                            {mat?.name || code}
-                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepMaterial(i, mi)}><X size={10} /></button>
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <select value="" onChange={(e) => addStepMaterial(i, e.target.value)} style={{ marginTop: 6 }}>
-                      <option value="">+ Add material...</option>
-                      {state.materials.filter((m) => !(step.materials ?? []).includes(m.code)).map((m) => (
-                        <option key={m.code} value={m.code}>{m.code} — {m.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="field" style={{ marginTop: 10 }}>
-                    <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Instruments</label>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                      {(step.instruments ?? []).map((code, ii) => {
-                        const inst = state.instruments.find((inst) => inst.code === code);
-                        return (
-                          <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
-                            {inst?.name || code}
-                            <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepInstrument(i, ii)}><X size={10} /></button>
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <select value="" onChange={(e) => addStepInstrument(i, e.target.value)} style={{ marginTop: 6 }}>
-                      <option value="">+ Add instrument...</option>
-                      {state.instruments.filter((inst) => !(step.instruments ?? []).includes(inst.code)).map((inst) => (
-                        <option key={inst.code} value={inst.code}>{inst.code} — {inst.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {editingStepIdx !== null && editing?.steps[editingStepIdx] && (
+                <div className="sub-form-list">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => setEditingStepIdx(null)}>
+                      ← Back to list
+                    </button>
+                    <div style={{ fontSize: 12, color: "#78909C" }}>Step {editingStepIdx + 1} of {editing.steps.length}</div>
+                  </div>
+
+                  {(() => {
+                    const i = editingStepIdx;
+                    const step = editing.steps[i];
+                    return (
+                      <div className="step-card" key={step.id}>
+                        <div className="step-card-header">
+                          <span className="step-number">{i + 1}</span>
+                          <div className="step-move-btns">
+                            <button className="icon-btn" disabled={i === 0} onClick={() => { moveStep(i, -1); setEditingStepIdx(i - 1); }}><ArrowUp size={12} /></button>
+                            <button className="icon-btn" disabled={i === editing.steps.length - 1} onClick={() => { moveStep(i, 1); setEditingStepIdx(i + 1); }}><ArrowDown size={12} /></button>
+                          </div>
+                          <button className="icon-btn danger" onClick={() => { removeStep(i); setEditingStepIdx(null); }}><Trash2 size={12} /></button>
+                        </div>
+
+                        <div className="field"><label>Title</label><input placeholder="Step title" value={step.title} onChange={(e) => updateStep(i, { title: e.target.value })} /></div>
+
+                        <div className="field"><label>Description</label><textarea placeholder="Describe what to do in this step..." value={step.description} onChange={(e) => updateStep(i, { description: e.target.value })} rows={4} /></div>
+
+                        <div className="row" style={{ gap: "0.5rem" }}>
+                          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                            <label>Duration (min)</label>
+                            <input type="number" min={0} placeholder="Duration" value={step.durationMinutes ?? ""} onChange={(e) => updateStep(i, { durationMinutes: e.target.value ? parseInt(e.target.value) : undefined })} />
+                          </div>
+                          <div className="field" style={{ flex: 2, marginBottom: 0 }}>
+                            <label>Safety notes</label>
+                            <input placeholder="Safety notes" value={step.safetyNotes || ""} onChange={(e) => updateStep(i, { safetyNotes: e.target.value })} />
+                          </div>
+                        </div>
+
+                        <div className="field" style={{ marginTop: 10 }}><label>Expected result</label><input placeholder="Expected result" value={step.expectedResult || ""} onChange={(e) => updateStep(i, { expectedResult: e.target.value })} /></div>
+
+                        {/* Images */}
+                        <div className="field" style={{ marginTop: 10, marginBottom: 0 }}>
+                          <label>Planned / Reference Images</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                            {(step.images ?? []).map((img, imgIdx) => (
+                              <div key={imgIdx} style={{ position: "relative" }}>
+                                <img src={img} alt={`planned-${imgIdx}`} className="image-preview" style={{ maxHeight: 100, borderRadius: 6, border: "1px solid #E0E0E0" }} />
+                                <button
+                                  className="icon-btn danger"
+                                  style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }}
+                                  onClick={() => removeStepImage(i, imgIdx)}
+                                  title="Remove image"
+                                >
+                                  <X size={12} color="#fff" />
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              style={{ fontSize: "0.75rem", alignSelf: "flex-start" }}
+                              onClick={() => { setActiveImageStep({ idx: i, type: "planned" }); fileRef.current?.click(); }}
+                            >
+                              {(step.images ?? []).length > 0 ? "+ Add more images" : "Upload images"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Materials */}
+                        <div className="field" style={{ marginTop: 10 }}>
+                          <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Materials</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                            {(step.materials ?? []).map((code, mi) => {
+                              const mat = state.materials.find((m) => m.code === code);
+                              return (
+                                <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                                  {mat?.name || code}
+                                  <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepMaterial(i, mi)}><X size={10} /></button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <select value="" onChange={(e) => addStepMaterial(i, e.target.value)} style={{ marginTop: 6 }}>
+                            <option value="">+ Add material...</option>
+                            {state.materials.filter((m) => !(step.materials ?? []).includes(m.code)).map((m) => (
+                              <option key={m.code} value={m.code}>{m.code} — {m.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Instruments */}
+                        <div className="field" style={{ marginTop: 10 }}>
+                          <label style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color: "#0D9488" }}>Required Instruments</label>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+                            {(step.instruments ?? []).map((code, ii) => {
+                              const inst = state.instruments.find((inst) => inst.code === code);
+                              return (
+                                <span key={code} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#E0F2F1", padding: "4px 10px", borderRadius: 12, fontSize: 11, color: "#0D9488" }}>
+                                  {inst?.name || code}
+                                  <button className="icon-btn" style={{ width: 16, height: 16 }} onClick={() => removeStepInstrument(i, ii)}><X size={10} /></button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                          <select value="" onChange={(e) => addStepInstrument(i, e.target.value)} style={{ marginTop: 6 }}>
+                            <option value="">+ Add instrument...</option>
+                            {state.instruments.filter((inst) => !(step.instruments ?? []).includes(inst.code)).map((inst) => (
+                              <option key={inst.code} value={inst.code}>{inst.code} — {inst.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
-          </div>
           )}
 
           <div className="form-actions">
@@ -582,7 +684,7 @@ export default function ExperimentDesigns() {
         </div>
       </Modal>
 
-      <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+      <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => {
         if (activeImageStep) {
           onImageChange(activeImageStep.idx, e);
           setActiveImageStep(null);
@@ -742,6 +844,9 @@ export default function ExperimentDesigns() {
                   )}
 
                   {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />}
+                  {(step.images ?? []).map((img, imgIdx) => (
+                    <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />
+                  ))}
                 </div>
               ))}
             </div>
@@ -821,6 +926,9 @@ export default function ExperimentDesigns() {
                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                       )}
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {(step.images ?? []).map((img, imgIdx) => (
+                        <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />
+                      ))}
                       {(step.materials?.length || step.instruments?.length) ? (
                         <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
                           {step.materials?.map((code) => {
