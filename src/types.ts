@@ -114,7 +114,8 @@ export interface ExperimentStep {
   images?: string[]; // planned reference images
   actualResult?: string; // actual observed result
   deviationNotes?: string; // deviation from plan
-  actualImage?: string; // actual photo
+  actualImage?: string; // actual photo (legacy)
+  actualImages?: string[]; // actual photos
   completed: boolean;
 }
 

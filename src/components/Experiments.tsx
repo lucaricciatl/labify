@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy, X, Image as ImageIcon, Eye, FileDown, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, Plus, ChevronDown, ChevronUp, FileSpreadsheet, FileText, ExternalLink, Link2, Search, ShoppingCart, Copy, X, Eye, FileDown, AlertTriangle } from "lucide-react";
 import { useStore, useExperimentActions, generateExperimentId, useOrderActions } from "../store";
 import type { Experiment, ExperimentMaterial, ExperimentInstrument, DocumentLink, ExperimentStep } from "../types";
 import { generateId } from "../utils";
@@ -82,15 +82,26 @@ export default function Experiments() {
 
   const stepImageRef = useRef<HTMLInputElement>(null);
   const [activeStepImage, setActiveStepImage] = useState<number | null>(null);
+  const [editingStepIdx, setEditingStepIdx] = useState<number | null>(null);
 
   const openAdd = () => {
     const nextId = generateExperimentId(state.experiments);
+    setEditingStepIdx(null);
     setEditing({ ...empty(), id: nextId });
     setModal(true);
   };
 
   const openEdit = (e: Experiment) => {
-    setEditing({ ...e, docLinks: e.docLinks ? [...e.docLinks] : [], attachments: e.attachments ? [...e.attachments] : [] });
+    setEditingStepIdx(null);
+    setEditing({
+      ...e,
+      docLinks: e.docLinks ? [...e.docLinks] : [],
+      attachments: e.attachments ? [...e.attachments] : [],
+      steps: e.steps.map((s) => ({
+        ...s,
+        actualImages: s.actualImages?.length ? [...s.actualImages] : s.actualImage ? [s.actualImage] : [],
+      })),
+    });
     setModal(true);
   };
 
@@ -102,7 +113,15 @@ export default function Experiments() {
       ...e,
       id: newId,
       name: newName,
-      steps: e.steps ? e.steps.map((s) => ({ ...s, id: generateId(), completed: false, actualResult: "", deviationNotes: "", actualImage: "" })) : [],
+      steps: e.steps ? e.steps.map((s) => ({
+        ...s,
+        id: generateId(),
+        completed: false,
+        actualResult: "",
+        deviationNotes: "",
+        actualImage: "",
+        actualImages: [],
+      })) : [],
       docLinks: e.docLinks ? e.docLinks.map((dl) => ({ ...dl, id: generateId() })) : [],
       attachments: e.attachments ? e.attachments.map((att) => ({ ...att, id: generateId() })) : [],
     };
@@ -208,6 +227,7 @@ export default function Experiments() {
       actualResult: "",
       deviationNotes: "",
       actualImage: "",
+      actualImages: [],
       completed: false,
     }));
     setEditing({
@@ -237,14 +257,48 @@ export default function Experiments() {
     setEditing({ ...editing, steps });
   };
 
-  const onStepImageChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateStep(i, { actualImage: reader.result as string });
+  const addStep = () => {
+    if (!editing) return;
+    const newStep: ExperimentStep = {
+      id: generateId(),
+      order: editing.steps.length + 1,
+      title: "",
+      description: "",
+      actualResult: "",
+      deviationNotes: "",
+      actualImage: "",
+      actualImages: [],
+      completed: false,
     };
-    reader.readAsDataURL(file);
+    setEditing({ ...editing, steps: [...editing.steps, newStep] });
+    setEditingStepIdx(editing.steps.length);
+  };
+
+  const onStepImageChange = (i: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const steps = [...(editing?.steps ?? [])];
+    const newImages: string[] = [];
+    let loaded = 0;
+    for (const file of Array.from(files)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        newImages.push(reader.result as string);
+        loaded++;
+        if (loaded === files.length) {
+          steps[i] = { ...steps[i], actualImages: [...(steps[i].actualImages ?? []), ...newImages] };
+          setEditing((p) => p ? { ...p, steps } : p);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeStepActualImage = (stepIdx: number, imgIdx: number) => {
+    if (!editing) return;
+    const steps = [...editing.steps];
+    steps[stepIdx] = { ...steps[stepIdx], actualImages: (steps[stepIdx].actualImages ?? []).filter((_, i) => i !== imgIdx) };
+    setEditing({ ...editing, steps });
   };
 
   const exportAll = () => {
@@ -487,7 +541,7 @@ export default function Experiments() {
                                       )}
                                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
                                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
-                                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                                      {(step.actualResult || step.deviationNotes || step.actualImage || (step.actualImages ?? []).length > 0) && (
                                         <div className="step-actual-box">
                                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
                                           <div className="actual-body">
@@ -499,6 +553,7 @@ export default function Experiments() {
                                               </div>
                                             )}
                                             {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                                            {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                                           </div>
                                         </div>
                                       )}
@@ -645,46 +700,124 @@ export default function Experiments() {
           <div className="field">
             <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span>Procedure Steps</span>
+              <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }} onClick={addStep}>
+                <Plus size={12} /> Add step
+              </button>
             </label>
-            <div className="sub-form-list procedure-steps">
-              {editing?.steps.map((step, i) => (
-                <div className="step-card" key={step.id}>
-                  <div className="step-card-header">
-                    <span className="step-number">{i + 1}</span>
-                    <strong style={{ fontSize: 12 }}>{step.title}</strong>
-                    <button className="icon-btn danger" onClick={() => removeStep(i)}><Trash2 size={12} /></button>
-                  </div>
-                  <p style={{ fontSize: 11, color: "#78909C", margin: "0 0 8px" }}>{step.description}</p>
-                  {step.expectedResult && <p style={{ fontSize: 11, color: "#0D9488", margin: "0 0 8px" }}><strong>Expected:</strong> {step.expectedResult}</p>}
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: "10px", color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Actual Result</label>
-                    <input value={step.actualResult || ""} onChange={(e) => updateStep(i, { actualResult: e.target.value })} placeholder="What was observed..." />
-                  </div>
-                  <div className="field" style={{ marginBottom: 8 }}>
-                    <label style={{ fontSize: "10px", color: "#C62828", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Deviation / Notes</label>
-                    <textarea value={step.deviationNotes || ""} onChange={(e) => updateStep(i, { deviationNotes: e.target.value })} rows={2} placeholder="Any deviation from protocol..." />
-                  </div>
-                  <label className="checkbox-field" style={{ marginBottom: 8 }}>
-                    <input type="checkbox" checked={step.completed} onChange={(e) => updateStep(i, { completed: e.target.checked })} />
-                    <span>Step completed</span>
-                  </label>
-                  <div className="image-upload" style={{ gap: "0.5rem" }}>
-                    {step.actualImage ? (
-                      <div style={{ position: "relative" }}>
-                        <img src={step.actualImage} alt="actual" className="image-preview" style={{ maxHeight: 80, borderRadius: 6 }} />
-                        <button className="icon-btn danger" style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }} onClick={() => updateStep(i, { actualImage: "" })}><X size={12} color="#fff" /></button>
+
+            {editingStepIdx === null && (
+              <div className="sub-form-list">
+                {editing?.steps.length === 0 && <div style={{ fontSize: 12, color: "#78909C", padding: "12px 0" }}>Select a design above to load steps, or add them manually.</div>}
+                {editing?.steps.map((step, i) => (
+                  <div
+                    key={step.id}
+                    onClick={() => setEditingStepIdx(i)}
+                    style={{
+                      cursor: "pointer",
+                      padding: "10px 14px",
+                      background: "#FAFAFA",
+                      borderRadius: 8,
+                      borderLeft: step.completed ? "3px solid #0D9488" : "3px solid #E0E0E0",
+                      marginBottom: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ width: 24, height: 24, borderRadius: "50%", background: step.completed ? "#0D9488" : "#B0BEC5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#263238", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{step.title || "Untitled step"}</div>
+                      <div style={{ fontSize: 11, color: "#78909C", display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        {step.durationMinutes && <span>⏱ {step.durationMinutes} min</span>}
+                        {(step.actualImages ?? []).length > 0 && <span>📷 {(step.actualImages ?? []).length}</span>}
+                        {step.completed && <span style={{ color: "#0D9488" }}>✓ Completed</span>}
                       </div>
-                    ) : (
-                      <div className="image-preview-placeholder"><ImageIcon size={20} /></div>
-                    )}
-                    <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => { setActiveStepImage(i); stepImageRef.current?.click(); }}>
-                      {step.actualImage ? "Change photo" : "Upload photo"}
+                      {step.actualResult && (
+                        <div style={{ fontSize: 11, color: "#546E7A", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{step.actualResult}</div>
+                      )}
+                    </div>
+                    <button
+                      className="icon-btn danger"
+                      style={{ flexShrink: 0 }}
+                      onClick={(e) => { e.stopPropagation(); removeStep(i); }}
+                      title="Delete step"
+                    >
+                      <Trash2 size={12} />
                     </button>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {editingStepIdx !== null && editing?.steps[editingStepIdx] && (
+              <div className="sub-form-list">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <button type="button" className="btn-secondary" style={{ fontSize: "0.75rem" }} onClick={() => setEditingStepIdx(null)}>
+                    ← Back to list
+                  </button>
+                  <div style={{ fontSize: 12, color: "#78909C" }}>Step {editingStepIdx + 1} of {editing.steps.length}</div>
                 </div>
-              ))}
-              {editing?.steps.length === 0 && <div style={{ fontSize: 12, color: "#78909C", padding: "8px 0" }}>Select a design above to load steps, or add them manually.</div>}
-            </div>
+
+                {(() => {
+                  const i = editingStepIdx;
+                  const step = editing.steps[i];
+                  return (
+                    <div className="step-card" key={step.id}>
+                      <div className="step-card-header">
+                        <span className="step-number">{i + 1}</span>
+                        <strong style={{ fontSize: 12 }}>{step.title}</strong>
+                        <button className="icon-btn danger" onClick={() => { removeStep(i); setEditingStepIdx(null); }}><Trash2 size={12} /></button>
+                      </div>
+                      {step.description && <p style={{ fontSize: 11, color: "#78909C", margin: "0 0 8px" }}>{step.description}</p>}
+                      {step.expectedResult && <p style={{ fontSize: 11, color: "#0D9488", margin: "0 0 8px" }}><strong>Expected:</strong> {step.expectedResult}</p>}
+
+                      <div className="field" style={{ marginBottom: 8 }}>
+                        <label style={{ fontSize: "10px", color: "#0D9488", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Actual Result</label>
+                        <input value={step.actualResult || ""} onChange={(e) => updateStep(i, { actualResult: e.target.value })} placeholder="What was observed..." />
+                      </div>
+
+                      <div className="field" style={{ marginBottom: 8 }}>
+                        <label style={{ fontSize: "10px", color: "#C62828", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Deviation / Notes</label>
+                        <textarea value={step.deviationNotes || ""} onChange={(e) => updateStep(i, { deviationNotes: e.target.value })} rows={4} placeholder="Any deviation from protocol..." />
+                      </div>
+
+                      <label className="checkbox-field" style={{ marginBottom: 8 }}>
+                        <input type="checkbox" checked={step.completed} onChange={(e) => updateStep(i, { completed: e.target.checked })} />
+                        <span>Step completed</span>
+                      </label>
+
+                      {/* Actual images */}
+                      <div className="field" style={{ marginBottom: 0 }}>
+                        <label style={{ fontSize: "11px" }}>Actual Photos</label>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+                          {(step.actualImages ?? []).map((img, imgIdx) => (
+                            <div key={imgIdx} style={{ position: "relative" }}>
+                              <img src={img} alt={`actual-${imgIdx}`} className="image-preview" style={{ maxHeight: 80, borderRadius: 6, border: "1px solid #E0E0E0" }} />
+                              <button
+                                className="icon-btn danger"
+                                style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,0.6)" }}
+                                onClick={() => removeStepActualImage(i, imgIdx)}
+                                title="Remove photo"
+                              >
+                                <X size={12} color="#fff" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            style={{ fontSize: "0.75rem", alignSelf: "flex-start" }}
+                            onClick={() => { setActiveStepImage(i); stepImageRef.current?.click(); }}
+                          >
+                            {(step.actualImages ?? []).length > 0 ? "+ Add more photos" : "Upload photos"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
           <div className="field"><label>Conclusion</label><textarea value={editing?.conclusion || ""} onChange={(e) => setEditing((p) => p ? { ...p, conclusion: e.target.value } : p)} rows={2} placeholder="Summary of results and findings..." /></div>
           <div className="field">
@@ -704,7 +837,7 @@ export default function Experiments() {
           <div className="form-actions"><button className="btn-primary" onClick={save}>Save</button></div>
         </div>
       </Modal>
-      <input ref={stepImageRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => {
+      <input ref={stepImageRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => {
         if (activeStepImage !== null) {
           onStepImageChange(activeStepImage, e);
           setActiveStepImage(null);
@@ -863,6 +996,9 @@ export default function Experiments() {
                       <div style={{ fontSize: 9, marginBottom: 4, color: "#C62828" }}><span style={{ fontWeight: 700 }}>Deviation / Notes:</span> {step.deviationNotes}</div>
                     )}
                     {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 260, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 4 }} />}
+                    {(step.actualImages ?? []).map((img, imgIdx) => (
+                      <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} style={{ maxWidth: 260, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 4 }} />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -974,7 +1110,7 @@ export default function Experiments() {
                       )}
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
-                      {(step.actualResult || step.deviationNotes || step.actualImage) && (
+                      {(step.actualResult || step.deviationNotes || step.actualImage || (step.actualImages ?? []).length > 0) && (
                         <div className="step-actual-box">
                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
                           <div className="actual-body">
@@ -986,6 +1122,7 @@ export default function Experiments() {
                               </div>
                             )}
                             {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                            {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                           </div>
                         </div>
                       )}
