@@ -785,6 +785,9 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
   if (!printRef.current) return;
   const source = printRef.current;
 
+  // Wait a tick so any browser layout / fonts for the off-screen node are complete.
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
   // Find sections marked for atomic pagination.
   const sections = Array.from(source.querySelectorAll<HTMLElement>("[data-pdf-section]"));
   if (sections.length === 0) {
@@ -859,15 +862,19 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
     document.body.appendChild(clone);
 
     // Allow fonts and images to settle before capturing.
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 500));
+    // Temporarily make the clone visible to html2canvas; extremely negative left
+    // still keeps it off-screen but lets some browsers size elements correctly.
+    clone.style.left = "-9000px";
     const canvas = await html2canvas(clone, {
-      scale: 5,
+      scale: 3,
       useCORS: true,
       backgroundColor: "#FFFFFF",
       logging: false,
       imageTimeout: 0,
       letterRendering: true,
     });
+    clone.style.left = "-9999px";
     const imgData = canvas.toDataURL("image/png");
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -880,6 +887,10 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
 }
 
 async function legacyDownloadPDF(source: HTMLElement, filename: string): Promise<void> {
+  // Wait a tick so the off-screen node has had a layout pass.
+  await new Promise((r) =>
+    requestAnimationFrame(() => requestAnimationFrame(r))
+  );
   const canvas = await html2canvas(source, {
     scale: 5,
     useCORS: true,

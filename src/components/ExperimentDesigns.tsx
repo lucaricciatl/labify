@@ -16,6 +16,7 @@ import {
   FileType2,
   Eye,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { useStore, useExperimentDesignActions } from "../store";
 import type { ExperimentDesign, DesignStep, Attachment } from "../types";
@@ -299,7 +300,8 @@ export default function ExperimentDesigns() {
 
   const exportPdf = async (d: ExperimentDesign) => {
     setPrintTarget(d);
-    await new Promise((r) => setTimeout(r, 150));
+    // Allow React to render the hidden print target before html2canvas measures it.
+    await new Promise((r) => setTimeout(r, 200));
     await downloadExperimentDesignPDF(d, printRef);
     setPrintTarget(null);
   };
@@ -422,6 +424,18 @@ export default function ExperimentDesigns() {
                           {d.conclusion && (
                             <div className="conclusion-card">
                               <strong>Conclusion:</strong> {d.conclusion}
+                            </div>
+                          )}
+                          {!!d.attachments?.length && (
+                            <div className="subtable-box">
+                              <strong style={{ color: "#0D9488", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>Attached Files</strong>
+                              <div className="exp-docs" style={{ marginTop: 8 }}>
+                                {d.attachments.map((att) => (
+                                  <a key={att.id} href={att.data || "#"} download={att.name}>
+                                    <FileText size={13} /> {att.name}
+                                  </a>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -948,6 +962,19 @@ export default function ExperimentDesigns() {
               {previewDesign.conclusion && (
                 <div className="conclusion-card" style={{ marginTop: 20 }}>
                   <strong>Conclusion:</strong> {previewDesign.conclusion}
+                </div>
+              )}
+
+              {!!previewDesign.attachments?.length && (
+                <div className="subtable-box" style={{ marginTop: 20 }}>
+                  <strong style={{ color: "#0D9488", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>Attached Files</strong>
+                  <div className="exp-docs" style={{ marginTop: 8 }}>
+                    {previewDesign.attachments.map((att) => (
+                      <a key={att.id} href={att.data || "#"} download={att.name}>
+                        <FileText size={13} /> {att.name}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
 

@@ -326,10 +326,10 @@ export default function Experiments() {
 
   const exportPdf = async (exp: Experiment) => {
     setPrintTarget(exp);
-    setTimeout(async () => {
-      await downloadExperimentPDF(exp, printRef);
-      setPrintTarget(null);
-    }, 100);
+    // Allow React to render the hidden print target before html2canvas measures it.
+    await new Promise((r) => setTimeout(r, 200));
+    await downloadExperimentPDF(exp, printRef);
+    setPrintTarget(null);
   };
 
   const q = search.toLowerCase();

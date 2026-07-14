@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { FilePlus, Trash2, FileText } from "lucide-react";
 import type { Attachment } from "../types";
+import { generateId } from "../utils";
 
 export function useAttachmentHelpers(
   items: Attachment[] | undefined,
@@ -11,16 +12,23 @@ export function useAttachmentHelpers(
   const addFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const input = e.target;
     const reader = new FileReader();
     reader.onload = () => {
       const attachment: Attachment = {
-        id: crypto.randomUUID(),
+        id: generateId(),
         name: file.name,
         type: file.type,
         size: file.size,
         data: reader.result as string,
       };
       setItems([...(items || []), attachment]);
+      // Reset the input so the same file can be selected again
+      input.value = "";
+    };
+    reader.onerror = () => {
+      console.error("[Attachments] Failed to read file:", file.name);
+      input.value = "";
     };
     reader.readAsDataURL(file);
   };
