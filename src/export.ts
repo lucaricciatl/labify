@@ -867,7 +867,7 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
     // still keeps it off-screen but lets some browsers size elements correctly.
     clone.style.left = "-9000px";
     const canvas = await html2canvas(clone, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       backgroundColor: "#FFFFFF",
       logging: false,
@@ -875,7 +875,7 @@ export async function downloadPDF(printRef: React.RefObject<HTMLDivElement | nul
       letterRendering: true,
     });
     clone.style.left = "-9999px";
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
     pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
@@ -892,12 +892,12 @@ async function legacyDownloadPDF(source: HTMLElement, filename: string): Promise
     requestAnimationFrame(() => requestAnimationFrame(r))
   );
   const canvas = await html2canvas(source, {
-    scale: 5,
+    scale: 2,
     useCORS: true,
     imageTimeout: 0,
     letterRendering: true,
   });
-  const imgData = canvas.toDataURL("image/png");
+  const imgData = canvas.toDataURL("image/jpeg", 0.92);
   const pdf = new jsPDF("p", "mm", "a4");
   const imgWidth = 190;
   const pageHeight = 277;
