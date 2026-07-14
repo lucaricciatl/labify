@@ -99,7 +99,16 @@ export default function Experiments() {
       attachments: e.attachments ? [...e.attachments] : [],
       steps: e.steps.map((s) => ({
         ...s,
-        actualImages: s.actualImages?.length ? [...s.actualImages] : s.actualImage ? [s.actualImage] : [],
+        actualImages: s.actualImages?.length
+          ? [...s.actualImages]
+          : s.actualImage
+            ? [s.actualImage]
+            : [],
+        images: s.images?.length
+          ? [...s.images]
+          : s.image
+            ? [s.image]
+            : [],
       })),
     });
     setModal(true);
@@ -536,7 +545,7 @@ export default function Experiments() {
                                       {step.expectedResult && (
                                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                                       )}
-                                      {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                                      {step.image && !(step.images ?? []).includes(step.image) && <img src={step.image} alt="planned" className="step-image" />}
                                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
                                       <div className="step-actual-box">
                                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
@@ -549,7 +558,7 @@ export default function Experiments() {
                                               </div>
                                             )}
                                             <div className="handwriting-lines" />
-                                            {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                                            {step.actualImage && !(step.actualImages ?? []).includes(step.actualImage) && <img src={step.actualImage} alt="actual" className="actual-image" />}
                                             {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                                           </div>
                                         </div>
@@ -973,7 +982,7 @@ export default function Experiments() {
                     </div>
                   )}
 
-                  {step.image && <img src={step.image} alt="planned" style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />}
+                  {step.image && !(step.images ?? []).includes(step.image) && <img src={step.image} alt="planned" style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />}
                   {(step.images ?? []).map((img, imgIdx) => (
                     <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} style={{ marginLeft: 30, maxWidth: 280, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 6 }} />
                   ))}
@@ -990,7 +999,7 @@ export default function Experiments() {
                     {step.deviationNotes && (
                       <div style={{ fontSize: 9, marginBottom: 4, color: "#C62828" }}><span style={{ fontWeight: 700 }}>Deviation / Notes:</span> {step.deviationNotes}</div>
                     )}
-                    {step.actualImage && <img src={step.actualImage} alt="actual" style={{ maxWidth: 260, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 4 }} />}
+                    {step.actualImage && !(step.actualImages ?? []).includes(step.actualImage) && <img src={step.actualImage} alt="actual" style={{ maxWidth: 260, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 4 }} />}
                     {(step.actualImages ?? []).map((img, imgIdx) => (
                       <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} style={{ maxWidth: 260, maxHeight: 180, borderRadius: 6, border: "1px solid #E0E0E0", marginTop: 4 }} />
                     ))}
@@ -1102,7 +1111,7 @@ export default function Experiments() {
                       {step.expectedResult && (
                         <div className="step-expected"><strong>Expected:</strong> {step.expectedResult}</div>
                       )}
-                      {step.image && <img src={step.image} alt="planned" className="step-image" />}
+                      {step.image && !(step.images ?? []).includes(step.image) && <img src={step.image} alt="planned" className="step-image" />}
                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
                       <div className="step-actual-box">
                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
@@ -1115,7 +1124,7 @@ export default function Experiments() {
                               </div>
                             )}
                             <div className="handwriting-lines" />
-                            {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
+                            {step.actualImage && !(step.actualImages ?? []).includes(step.actualImage) && <img src={step.actualImage} alt="actual" className="actual-image" />}
                             {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                           </div>
                         </div>
