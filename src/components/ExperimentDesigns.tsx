@@ -75,10 +75,10 @@ function deriveDesignInstruments(steps: DesignStep[]): string[] {
 
 function generateDesignId(designs: ExperimentDesign[]): string {
   const now = new Date();
-  const yyyy = String(now.getFullYear());
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const prefix = `DES-${yyyy}${mm}${dd}-`;
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(now.getFullYear());
+  const prefix = `DES-${dd}${mm}${yyyy}-`;
   let max = 0;
   for (const d of designs) {
     if (d.id.startsWith(prefix)) {

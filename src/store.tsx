@@ -504,10 +504,10 @@ export function useExperimentDesignActions() {
 
 export function generateExperimentId(experiments: Experiment[]): string {
   const now = new Date();
-  const yyyy = String(now.getFullYear());
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const prefix = `EXP-${yyyy}${mm}${dd}-`;
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(now.getFullYear());
+  const prefix = `EXP-${dd}${mm}${yyyy}-`;
   let max = 0;
   for (const ex of experiments) {
     if (ex.id.startsWith(prefix)) {
@@ -520,6 +520,9 @@ export function generateExperimentId(experiments: Experiment[]): string {
 
 export function generateOrderId(): string {
   const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = String(now.getFullYear());
   const ts = String(now.getTime()).slice(-6);
-  return `ORD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${ts}`;
+  return `ORD-${dd}${mm}${yyyy}-${ts}`;
 }
