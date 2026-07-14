@@ -530,9 +530,6 @@ export default function Experiments() {
                                       <span className={`step-check ${step.completed ? "checked" : ""}`} aria-label={step.completed ? "Completed" : "Pending"}>
                                         {step.completed ? "✓" : ""}
                                       </span>
-                                      <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>
-                                        {step.completed ? "Completed" : "Pending"}
-                                      </span>
                                     </div>
                                     <div className="step-preview-body">
                                       <p className="step-desc">{step.description}</p>
@@ -541,8 +538,7 @@ export default function Experiments() {
                                       )}
                                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
                                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
-                                      {(step.actualResult || step.deviationNotes || step.actualImage || (step.actualImages ?? []).length > 0) && (
-                                        <div className="step-actual-box">
+                                      <div className="step-actual-box">
                                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
                                           <div className="actual-body">
                                             {step.actualResult && <p>{step.actualResult}</p>}
@@ -552,11 +548,11 @@ export default function Experiments() {
                                                 <span>{step.deviationNotes}</span>
                                               </div>
                                             )}
+                                            <div className="handwriting-lines" />
                                             {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
                                             {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                                           </div>
                                         </div>
-                                      )}
                                     </div>
                                   </div>
                                 ))}
@@ -960,9 +956,7 @@ export default function Experiments() {
                     </div>
                     {step.completed ? (
                       <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", background: "#0D9488", padding: "2px 8px", borderRadius: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Completed</span>
-                    ) : (
-                      <span style={{ fontSize: 8, fontWeight: 700, color: "#78909C", background: "#ECEFF1", padding: "2px 8px", borderRadius: 10, textTransform: "uppercase", letterSpacing: "0.5px" }}>Pending</span>
-                    )}
+                    ) : null}
                   </div>
                   {step.durationMinutes && (
                     <div style={{ fontSize: 9, color: "#78909C", marginBottom: 4, marginLeft: 30 }}>Duration: {step.durationMinutes} min</div>
@@ -992,6 +986,7 @@ export default function Experiments() {
                     ) : (
                       <div style={{ fontSize: 9, color: "#999", marginBottom: 4 }}>Actual result: —</div>
                     )}
+                    <div className="handwriting-lines" />
                     {step.deviationNotes && (
                       <div style={{ fontSize: 9, marginBottom: 4, color: "#C62828" }}><span style={{ fontWeight: 700 }}>Deviation / Notes:</span> {step.deviationNotes}</div>
                     )}
@@ -1098,7 +1093,6 @@ export default function Experiments() {
                       <span className={`step-check ${step.completed ? "checked" : ""}`} aria-label={step.completed ? "Completed" : "Pending"}>
                         {step.completed ? "✓" : ""}
                       </span>
-                      <span className={`step-status-badge ${step.completed ? "completed" : "pending"}`}>{step.completed ? "Completed" : "Pending"}</span>
                     </div>
                     <div className="step-preview-body">
                       <p className="step-desc">{step.description}</p>
@@ -1110,8 +1104,7 @@ export default function Experiments() {
                       )}
                       {step.image && <img src={step.image} alt="planned" className="step-image" />}
                       {(step.images ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`planned-${imgIdx}`} className="step-image" style={{ marginTop: 4 }} />)}
-                      {(step.actualResult || step.deviationNotes || step.actualImage || (step.actualImages ?? []).length > 0) && (
-                        <div className="step-actual-box">
+                      <div className="step-actual-box">
                           <div className="actual-header">📝 Execution &amp; Deviation Record</div>
                           <div className="actual-body">
                             {step.actualResult && <p>{step.actualResult}</p>}
@@ -1121,11 +1114,11 @@ export default function Experiments() {
                                 <span>{step.deviationNotes}</span>
                               </div>
                             )}
+                            <div className="handwriting-lines" />
                             {step.actualImage && <img src={step.actualImage} alt="actual" className="actual-image" />}
                             {(step.actualImages ?? []).map((img, imgIdx) => <img key={imgIdx} src={img} alt={`actual-${imgIdx}`} className="actual-image" style={{ marginTop: 4 }} />)}
                           </div>
                         </div>
-                      )}
                     </div>
                   </div>
                 ))}
